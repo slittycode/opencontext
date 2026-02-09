@@ -167,11 +167,19 @@ export namespace Project {
         }
       }
 
+      // No git found - use folder-based project detection
+      // Generate a stable ID from the directory path
+      const encoder = new TextEncoder()
+      const data = encoder.encode(directory)
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const folderId = "folder-" + hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+
       return {
-        id: "global",
-        worktree: "/",
-        sandbox: "/",
-        vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+        id: folderId,
+        worktree: directory,
+        sandbox: directory,
+        vcs: undefined, // No VCS for folder-based projects
       }
     })
 
