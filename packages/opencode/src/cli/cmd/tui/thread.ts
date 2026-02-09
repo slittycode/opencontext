@@ -9,6 +9,7 @@ import { Log } from "@/util/log"
 import { withNetworkOptions, resolveNetworkOptions } from "@/cli/network"
 import type { Event } from "@opencode-ai/sdk/v2"
 import type { EventSource } from "./context/sdk"
+import { checkTuiSupport, restoreTerminalState } from "@/cli/terminal"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -75,8 +76,20 @@ export const TuiThreadCommand = cmd({
       .option("agent", {
         type: "string",
         describe: "agent to use",
-      }),
+  }),
   handler: async (args) => {
+    const terminal = checkTuiSupport({
+      stdinTTY: !!process.stdin.isTTY,
+      stdoutTTY: !!process.stdout.isTTY,
+      term: process.env.TERM,
+    })
+    if (!terminal.ok) {
+      UI.error(terminal.reason ?? "OpenContext TUI requires an interactive terminal.")
+      UI.println(UI.Style.TEXT_DIM + 'Use "opencontext run <message>" for non-interactive usage.')
+      process.exitCode = 1
+      return
+    }
+
     if (args.fork && !args.continue && !args.session) {
       UI.error("--fork requires --continue or --session")
       process.exit(1)
@@ -104,16 +117,41 @@ export const TuiThreadCommand = cmd({
         Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
       ),
     })
+    let terminalRestored = false
+    let exiting = false
+    const restoreOnce = () => {
+      if (terminalRestored) return
+      terminalRestored = true
+      restoreTerminalState()
+    }
+    const exitWithCleanup = (code: number) => {
+      if (exiting) return
+      exiting = true
+      restoreOnce()
+      process.exitCode = code
+      process.exit(code)
+    }
     worker.onerror = (e) => {
       Log.Default.error(e)
     }
     const client = Rpc.client<typeof rpc>(worker)
     process.on("uncaughtException", (e) => {
+      restoreOnce()
       Log.Default.error(e)
+      if (e instanceof Error && e.message.includes("EIO: i/o error, read")) {
+        UI.error("Terminal I/O disconnected unexpectedly.")
+        UI.println(UI.Style.TEXT_DIM + "Run `reset` if your shell prompt looks corrupted.")
+      }
+      exitWithCleanup(1)
     })
     process.on("unhandledRejection", (e) => {
+      restoreOnce()
       Log.Default.error(e)
+      exitWithCleanup(1)
     })
+    process.on("exit", restoreOnce)
+    process.once("SIGINT", () => exitWithCleanup(130))
+    process.once("SIGTERM", () => exitWithCleanup(143))
     process.on("SIGUSR2", async () => {
       await client.call("reload", undefined)
     })
@@ -170,6 +208,6 @@ export const TuiThreadCommand = cmd({
       client.call("checkUpgrade", { directory: cwd }).catch(() => {})
     }, 1000)
 
-    await tuiPromise
+    await tuiPromise.finally(restoreOnce)
   },
 })

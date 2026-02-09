@@ -26,6 +26,7 @@ import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
+import { normalizeCliArgs } from "./cli/args"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -113,7 +114,7 @@ const cli = yargs(hideBin(process.argv))
   .strict()
 
 try {
-  await cli.parse()
+  await cli.parse(normalizeCliArgs(hideBin(process.argv)))
 } catch (e) {
   let data: Record<string, any> = {}
   if (e instanceof NamedError) {

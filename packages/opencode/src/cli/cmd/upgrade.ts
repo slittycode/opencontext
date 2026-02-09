@@ -51,9 +51,22 @@ export const UpgradeCommand = {
 
     let target = args.target ? args.target.replace(/^v/, "") : ""
     if (!target) {
-      target = await Installation.latest(method).catch((err) => {
-        throw new Error(err instanceof Error ? err.message : String(err))
-      })
+      const latest = await Installation.latest(method).catch((err) => err)
+      if (latest instanceof Error) {
+        const message = latest instanceof Error ? latest.message : String(latest)
+        const releaseUnavailable =
+          message.includes("No official OpenContext package found") ||
+          message.includes("No dist-tag available") ||
+          message.includes("Not Found")
+        if (releaseUnavailable) {
+          prompts.log.warn("Auto-upgrade is disabled until release artifacts are guaranteed")
+          prompts.log.info("Re-run the installer when new release artifacts are available")
+          prompts.outro("Done")
+          return
+        }
+        throw latest
+      }
+      target = latest
     }
 
     if (Installation.VERSION === target) {
