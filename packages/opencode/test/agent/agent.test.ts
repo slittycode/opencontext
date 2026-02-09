@@ -18,6 +18,7 @@ test("returns default native agents when no config", async () => {
     fn: async () => {
       const agents = await Agent.list()
       const names = agents.map((a) => a.name)
+      expect(names).toContain("coding")
       expect(names).toContain("build")
       expect(names).toContain("plan")
       expect(names).toContain("general")
@@ -29,15 +30,30 @@ test("returns default native agents when no config", async () => {
   })
 })
 
-test("build agent has correct default properties", async () => {
+test("coding agent has correct default properties", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const coding = await Agent.get("coding")
+      expect(coding).toBeDefined()
+      expect(coding?.mode).toBe("primary")
+      expect(coding?.native).toBe(true)
+      expect(evalPerm(coding, "edit")).toBe("allow")
+      expect(evalPerm(coding, "bash")).toBe("allow")
+    },
+  })
+})
+
+test("build agent remains as hidden compatibility alias", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
       const build = await Agent.get("build")
       expect(build).toBeDefined()
+      expect(build?.hidden).toBe(true)
       expect(build?.mode).toBe("primary")
-      expect(build?.native).toBe(true)
       expect(evalPerm(build, "edit")).toBe("allow")
       expect(evalPerm(build, "bash")).toBe("allow")
     },
@@ -550,13 +566,13 @@ description: Permission skill.
   }
 })
 
-test("defaultAgent returns build when no default_agent config", async () => {
+test("defaultAgent returns coding when no default_agent config", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
       const agent = await Agent.defaultAgent()
-      expect(agent).toBe("build")
+      expect(agent).toBe("coding")
     },
   })
 })
@@ -642,7 +658,7 @@ test("defaultAgent returns plan when build is disabled and default_agent not set
   await using tmp = await tmpdir({
     config: {
       agent: {
-        build: { disable: true },
+        coding: { disable: true },
       },
     },
   })
@@ -660,15 +676,20 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
-        build: { disable: true },
+        coding: { disable: true },
         plan: { disable: true },
+        research: { disable: true },
+        socratic: { disable: true },
+        "cv-review": { disable: true },
+        brainstorm: { disable: true },
+        tutor: { disable: true },
       },
     },
   })
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      // build and plan are disabled, no primary-capable agents remain
+      // all visible primary-capable agents are disabled
       await expect(Agent.defaultAgent()).rejects.toThrow("no primary visible agent found")
     },
   })

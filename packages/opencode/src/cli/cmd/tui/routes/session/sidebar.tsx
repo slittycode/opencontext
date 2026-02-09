@@ -284,10 +284,8 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
                     ✕
                   </text>
                 </box>
-                <text fg={theme.textMuted}>OpenCode includes free models so you can start immediately.</text>
-                <text fg={theme.textMuted}>
-                  Connect from 75+ providers to use other models, including Claude, GPT, Gemini etc
-                </text>
+                <text fg={theme.textMuted}>OpenContext includes free models so you can start immediately.</text>
+                <text fg={theme.textMuted}>Connect from 75+ providers to use Claude, GPT, Gemini, and more.</text>
                 <box flexDirection="row" gap={1} justifyContent="space-between">
                   <text fg={theme.text}>Connect provider</text>
                   <text fg={theme.textMuted}>/connect</text>
@@ -302,7 +300,7 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
           <text fg={theme.textMuted}>
             <span style={{ fg: theme.success }}>•</span> <b>Open</b>
             <span style={{ fg: theme.text }}>
-              <b>Code</b>
+              <b>Context</b>
             </span>{" "}
             <span>{Installation.VERSION}</span>
           </text>

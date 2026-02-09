@@ -12,7 +12,9 @@ export function DialogAgent() {
       return {
         value: item.name,
         title: item.name,
-        description: item.native ? "native" : item.description,
+        description: item.description ?? "No description provided.",
+        category: item.name === "coding" || item.name === "plan" ? "Core" : "Specialists",
+        gutter: <text style={{ fg: local.agent.color(item.name) }}>●</text>,
       }
     }),
   )

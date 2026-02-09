@@ -128,7 +128,7 @@ describe("Instance.containsPath", () => {
     })
   })
 
-  test("returns true for path inside worktree but outside directory (monorepo subdirectory scenario)", async () => {
+  test("returns false for paths outside directory when running from monorepo subdirectory", async () => {
     await using tmp = await tmpdir({ git: true })
     const subdir = path.join(tmp.path, "packages", "lib")
     await fs.mkdir(subdir, { recursive: true })
@@ -136,12 +136,11 @@ describe("Instance.containsPath", () => {
     await Instance.provide({
       directory: subdir,
       fn: () => {
-        // .opencode at worktree root, but we're running from packages/lib
-        expect(Instance.containsPath(path.join(tmp.path, ".opencode", "state"))).toBe(true)
-        // sibling package should also be accessible
-        expect(Instance.containsPath(path.join(tmp.path, "packages", "other", "file.ts"))).toBe(true)
-        // worktree root itself
-        expect(Instance.containsPath(tmp.path)).toBe(true)
+        expect(Instance.directory).toBe(Instance.worktree)
+        // Paths outside the selected working directory are external.
+        expect(Instance.containsPath(path.join(tmp.path, ".opencode", "state"))).toBe(false)
+        expect(Instance.containsPath(path.join(tmp.path, "packages", "other", "file.ts"))).toBe(false)
+        expect(Instance.containsPath(tmp.path)).toBe(false)
       },
     })
   })

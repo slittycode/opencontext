@@ -79,9 +79,9 @@ export namespace Agent {
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
 
     const result: Record<string, Info> = {
-      build: {
-        name: "build",
-        description: "The default agent. Executes tools based on configured permissions.",
+      coding: {
+        name: "coding",
+        description: "Full-access coding agent. Executes tools based on configured permissions.",
         options: {},
         permission: PermissionNext.merge(
           defaults,
@@ -93,6 +93,22 @@ export namespace Agent {
         ),
         mode: "primary",
         native: true,
+      },
+      build: {
+        name: "build",
+        description: "Legacy alias for coding agent.",
+        options: {},
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            question: "allow",
+            plan_enter: "allow",
+          }),
+          user,
+        ),
+        mode: "primary",
+        native: true,
+        hidden: true,
       },
       plan: {
         name: "plan",
@@ -310,7 +326,12 @@ export namespace Agent {
       },
     }
 
-    for (const [key, value] of Object.entries(cfg.agent ?? {})) {
+    const configuredAgents = mergeDeep(
+      cfg.agent?.build ? { coding: cfg.agent.build } : {},
+      cfg.agent ?? {},
+    )
+
+    for (const [key, value] of Object.entries(configuredAgents)) {
       if (value.disable) {
         delete result[key]
         continue
@@ -367,7 +388,7 @@ export namespace Agent {
     return pipe(
       await state(),
       values(),
-      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "build"), "desc"]),
+      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "coding"), "desc"]),
     )
   }
 
