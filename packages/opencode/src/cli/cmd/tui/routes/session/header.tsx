@@ -9,6 +9,7 @@ import { useCommandDialog } from "@tui/component/dialog-command"
 import { useKeybind } from "../../context/keybind"
 import { Installation } from "@/installation"
 import { useTerminalDimensions } from "@opentui/solid"
+import { useLocal } from "../../context/local"
 
 const Title = (props: { session: Accessor<Session> }) => {
   const { theme } = useTheme()
@@ -63,9 +64,11 @@ export function Header() {
   const { theme } = useTheme()
   const keybind = useKeybind()
   const command = useCommandDialog()
+  const local = useLocal()
   const [hover, setHover] = createSignal<"parent" | "prev" | "next" | null>(null)
   const dimensions = useTerminalDimensions()
   const narrow = createMemo(() => dimensions().width < 80)
+  const currentAgent = createMemo(() => local.agent.current())
 
   return (
     <box flexShrink={0}>
@@ -84,9 +87,15 @@ export function Header() {
           <Match when={session()?.parentID}>
             <box flexDirection="column" gap={1}>
               <box flexDirection={narrow() ? "column" : "row"} justifyContent="space-between" gap={narrow() ? 1 : 0}>
-                <text fg={theme.text}>
-                  <b>Subagent session</b>
-                </text>
+                <box flexDirection="row" gap={2}>
+                  <text fg={theme.text}>
+                    <b>Subagent session</b>
+                  </text>
+                  <text fg={theme.text}>
+                    <span style={{ fg: local.agent.color(currentAgent().name) }}>●</span>{" "}
+                    <b>{currentAgent().name}</b>
+                  </text>
+                </box>
                 <box flexDirection="row" gap={1} flexShrink={0}>
                   <ContextInfo context={context} cost={cost} />
                   <text fg={theme.textMuted}>v{Installation.VERSION}</text>
@@ -128,7 +137,13 @@ export function Header() {
           </Match>
           <Match when={true}>
             <box flexDirection={narrow() ? "column" : "row"} justifyContent="space-between" gap={1}>
-              <Title session={session} />
+              <box flexDirection="row" gap={2}>
+                <Title session={session} />
+                <text fg={theme.text}>
+                  <span style={{ fg: local.agent.color(currentAgent().name) }}>●</span>{" "}
+                  <b>{currentAgent().name}</b>
+                </text>
+              </box>
               <box flexDirection="row" gap={1} flexShrink={0}>
                 <ContextInfo context={context} cost={cost} />
                 <text fg={theme.textMuted}>v{Installation.VERSION}</text>

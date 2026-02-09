@@ -80,7 +80,7 @@ export namespace Server {
         .use((c, next) => {
           const password = Flag.OPENCODE_SERVER_PASSWORD
           if (!password) return next()
-          const username = Flag.OPENCODE_SERVER_USERNAME ?? "opencode"
+          const username = Flag.OPENCODE_SERVER_USERNAME ?? "opencontext"
           return basicAuth({ username, password })(c, next)
         })
         .use(async (c, next) => {
@@ -109,8 +109,8 @@ export namespace Server {
               if (input.startsWith("http://127.0.0.1:")) return input
               if (input === "tauri://localhost" || input === "http://tauri.localhost") return input
 
-              // *.opencode.ai (https only, adjust if needed)
-              if (/^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/.test(input)) {
+              // *.opencontext.ai (https only, adjust if needed)
+              if (/^https:\/\/([a-z0-9-]+\.)*opencontext\.ai$/.test(input)) {
                 return input
               }
               if (_corsWhitelist.includes(input)) {
@@ -186,7 +186,11 @@ export namespace Server {
         )
         .use(async (c, next) => {
           if (c.req.path === "/log") return next()
-          const raw = c.req.query("directory") || c.req.header("x-opencode-directory") || process.cwd()
+          const raw =
+            c.req.query("directory") ||
+            c.req.header("x-opencontext-directory") ||
+            c.req.header("x-opencode-directory") ||
+            process.cwd()
           const directory = (() => {
             try {
               return decodeURIComponent(raw)
@@ -207,9 +211,9 @@ export namespace Server {
           openAPIRouteHandler(app, {
             documentation: {
               info: {
-                title: "opencode",
+                title: "opencontext",
                 version: "0.0.3",
-                description: "opencode api",
+                description: "opencontext api",
               },
               openapi: "3.1.1",
             },
@@ -231,7 +235,7 @@ export namespace Server {
           "/instance/dispose",
           describeRoute({
             summary: "Dispose instance",
-            description: "Clean up and dispose the current OpenCode instance, releasing all resources.",
+            description: "Clean up and dispose the current OpenContext instance, releasing all resources.",
             operationId: "instance.dispose",
             responses: {
               200: {

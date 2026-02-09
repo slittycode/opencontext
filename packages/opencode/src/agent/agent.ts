@@ -13,6 +13,11 @@ import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_RESEARCH from "./prompt/research.txt"
+import PROMPT_SOCRATIC from "./prompt/socratic.txt"
+import PROMPT_CV_REVIEW from "./prompt/cv-review.txt"
+import PROMPT_BRAINSTORM from "./prompt/brainstorm.txt"
+import PROMPT_TUTOR from "./prompt/tutor.txt"
 import { PermissionNext } from "@/permission/next"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@/global"
@@ -74,9 +79,9 @@ export namespace Agent {
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
 
     const result: Record<string, Info> = {
-      build: {
-        name: "build",
-        description: "The default agent. Executes tools based on configured permissions.",
+      coding: {
+        name: "coding",
+        description: "Full-access coding agent. Executes tools based on configured permissions.",
         options: {},
         permission: PermissionNext.merge(
           defaults,
@@ -88,6 +93,22 @@ export namespace Agent {
         ),
         mode: "primary",
         native: true,
+      },
+      build: {
+        name: "build",
+        description: "Legacy alias for coding agent.",
+        options: {},
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            question: "allow",
+            plan_enter: "allow",
+          }),
+          user,
+        ),
+        mode: "primary",
+        native: true,
+        hidden: true,
       },
       plan: {
         name: "plan",
@@ -199,9 +220,118 @@ export namespace Agent {
         ),
         prompt: PROMPT_SUMMARY,
       },
+      // === NEW CONTEXT AGENTS ===
+      research: {
+        name: "research",
+        description: "Deep research agent. Web search, synthesis, analysis.",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            edit: "deny",
+            write: "deny",
+            bash: "deny",
+            websearch: "allow",
+            webfetch: "allow",
+            read: "allow",
+            task: "allow",
+            question: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_RESEARCH,
+        options: {},
+        mode: "primary",
+        native: true,
+        color: "#10b981",
+      },
+      socratic: {
+        name: "socratic",
+        description: "Teaching through questions. Guides discovery.",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            question: "allow",
+            websearch: "allow",
+            webfetch: "allow",
+            read: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_SOCRATIC,
+        options: {},
+        mode: "primary",
+        native: true,
+        color: "#8b5cf6",
+      },
+      "cv-review": {
+        name: "cv-review",
+        description: "CV/resume analysis and improvement.",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            edit: "deny",
+            bash: "deny",
+            read: "allow",
+            write: "allow",
+            question: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_CV_REVIEW,
+        options: {},
+        mode: "primary",
+        native: true,
+        color: "#f59e0b",
+      },
+      brainstorm: {
+        name: "brainstorm",
+        description: "Creative ideation and concept exploration.",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            websearch: "allow",
+            webfetch: "allow",
+            todowrite: "allow",
+            question: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_BRAINSTORM,
+        options: {},
+        mode: "primary",
+        native: true,
+        color: "#ec4899",
+      },
+      tutor: {
+        name: "tutor",
+        description: "Patient explanations and learning support.",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            websearch: "allow",
+            webfetch: "allow",
+            read: "allow",
+            question: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_TUTOR,
+        options: {},
+        mode: "primary",
+        native: true,
+        color: "#06b6d4",
+      },
     }
 
-    for (const [key, value] of Object.entries(cfg.agent ?? {})) {
+    const configuredAgents = mergeDeep(
+      cfg.agent?.build ? { coding: cfg.agent.build } : {},
+      cfg.agent ?? {},
+    )
+
+    for (const [key, value] of Object.entries(configuredAgents)) {
       if (value.disable) {
         delete result[key]
         continue
@@ -258,7 +388,7 @@ export namespace Agent {
     return pipe(
       await state(),
       values(),
-      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "build"), "desc"]),
+      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "coding"), "desc"]),
     )
   }
 
@@ -324,7 +454,7 @@ export namespace Agent {
           instructions: SystemPrompt.instructions(),
           store: false,
         }),
-        onError: () => {},
+        onError: () => { },
       })
       for await (const part of result.fullStream) {
         if (part.type === "error") throw part.error
