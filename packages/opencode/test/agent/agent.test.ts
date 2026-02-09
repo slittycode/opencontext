@@ -676,6 +676,7 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
+        build: { disable: true },
         coding: { disable: true },
         plan: { disable: true },
         research: { disable: true },
@@ -683,6 +684,13 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
         "cv-review": { disable: true },
         brainstorm: { disable: true },
         tutor: { disable: true },
+        educator: { disable: true },
+        ideator: { disable: true },
+        "deep-researcher": { disable: true },
+        "code-expert": { disable: true },
+        compaction: { disable: true },
+        title: { disable: true },
+        summary: { disable: true },
       },
     },
   })

@@ -535,6 +535,13 @@ export namespace Server {
           },
         )
         .all("/*", async (c) => {
+          if (!Flag.OPENCODE_ENABLE_WEB_BACKEND) {
+            return c.text(
+              "Web backend is disabled until release artifacts are guaranteed. Set OPENCODE_ENABLE_WEB_BACKEND=1 to enable.",
+              503,
+            )
+          }
+
           const path = c.req.path
 
           const response = await proxy(`https://app.opencode.ai${path}`, {
@@ -557,9 +564,9 @@ export namespace Server {
     const result = await generateSpecs(App() as Hono, {
       documentation: {
         info: {
-          title: "opencode",
+          title: "opencontext",
           version: "1.0.0",
-          description: "opencode api",
+          description: "opencontext api",
         },
         openapi: "3.1.1",
       },

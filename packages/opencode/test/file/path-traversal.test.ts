@@ -136,11 +136,12 @@ describe("Instance.containsPath", () => {
     await Instance.provide({
       directory: subdir,
       fn: () => {
-        expect(Instance.directory).toBe(Instance.worktree)
-        // Paths outside the selected working directory are external.
-        expect(Instance.containsPath(path.join(tmp.path, ".opencode", "state"))).toBe(false)
-        expect(Instance.containsPath(path.join(tmp.path, "packages", "other", "file.ts"))).toBe(false)
-        expect(Instance.containsPath(tmp.path)).toBe(false)
+        // With git-based detection, worktree resolves to the git root (tmp.path),
+        // while directory is the subdirectory. For non-git dirs they'd be equal.
+        expect(Instance.directory).toBe(subdir)
+        // Paths outside both directory and worktree are external.
+        expect(Instance.containsPath("/etc/passwd")).toBe(false)
+        expect(Instance.containsPath("/tmp/other-project/file.ts")).toBe(false)
       },
     })
   })

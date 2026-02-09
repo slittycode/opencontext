@@ -14,6 +14,9 @@ declare global {
 
 export namespace Installation {
   const log = Log.create({ service: "installation" })
+  const OFFICIAL_REPOS = ["slittycode/opencontext", "anomalyco/opencode"] as const
+  const PRIMARY_NPM_PACKAGE = "opencontext"
+  const LEGACY_NPM_PACKAGES = ["opencontext-ai", "opencode-ai", "opencode"] as const
 
   export type Method = Awaited<ReturnType<typeof method>>
 
@@ -107,7 +110,7 @@ export namespace Installation {
       const installedNames =
         check.name === "brew" || check.name === "choco" || check.name === "scoop"
           ? ["opencontext", "opencode"]
-          : ["opencontext", "opencode-ai", "opencode"]
+          : [PRIMARY_NPM_PACKAGE, ...LEGACY_NPM_PACKAGES]
       if (installedNames.some((installedName) => output.includes(installedName))) {
         return check.name
       }
@@ -145,13 +148,13 @@ export namespace Installation {
         })
         break
       case "npm":
-        cmd = $`npm install -g opencontext@${target}`
+        cmd = $`npm install -g ${PRIMARY_NPM_PACKAGE}@${target}`
         break
       case "pnpm":
-        cmd = $`pnpm install -g opencontext@${target}`
+        cmd = $`pnpm install -g ${PRIMARY_NPM_PACKAGE}@${target}`
         break
       case "bun":
-        cmd = $`bun install -g opencontext@${target}`
+        cmd = $`bun install -g ${PRIMARY_NPM_PACKAGE}@${target}`
         break
       case "brew": {
         const formula = await getBrewFormula()
@@ -190,6 +193,38 @@ export namespace Installation {
   export const CHANNEL = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
   export const USER_AGENT = `opencontext/${CHANNEL}/${VERSION}/${Flag.OPENCODE_CLIENT}`
 
+  function extractRepository(raw: any) {
+    if (!raw) return ""
+    if (typeof raw === "string") return raw
+    if (typeof raw.url === "string") return raw.url
+    return ""
+  }
+
+  function isOfficialRepository(raw: any) {
+    const repo = extractRepository(raw).toLowerCase()
+    return OFFICIAL_REPOS.some((trusted) => repo.includes(trusted))
+  }
+
+  async function npmLatestVersion(registry: string) {
+    const meta = await fetch(`${registry}/${PRIMARY_NPM_PACKAGE}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(res.statusText)
+        return res.json()
+      })
+      .catch(() => undefined)
+
+    if (!meta || !isOfficialRepository(meta.repository)) {
+      throw new Error(
+        `No official OpenContext package found in npm registry. Expected repository containing ${OFFICIAL_REPOS[0]}`,
+      )
+    }
+
+    const tags = (meta["dist-tags"] ?? {}) as Record<string, string>
+    const version = tags[CHANNEL] ?? tags.latest
+    if (!version) throw new Error(`No dist-tag available for ${PRIMARY_NPM_PACKAGE}`)
+    return version
+  }
+
   export async function latest(installMethod?: Method) {
     const detectedMethod = installMethod || (await method())
 
@@ -219,13 +254,7 @@ export namespace Installation {
         const reg = r || "https://registry.npmjs.org"
         return reg.endsWith("/") ? reg.slice(0, -1) : reg
       })
-      const channel = CHANNEL
-      return fetch(`${registry}/opencontext/${channel}`)
-        .then((res) => {
-          if (!res.ok) throw new Error(res.statusText)
-          return res.json()
-        })
-        .then((data: any) => data.version)
+      return npmLatestVersion(registry)
     }
 
     if (detectedMethod === "choco") {

@@ -240,10 +240,10 @@ function ApiMethod(props: ApiMethodProps) {
         props.providerID === "opencode" ? (
           <box gap={1}>
             <text fg={theme.textMuted}>
-              OpenContext default provider offers curated models behind a single API key.
+              OpenContext hosted provider is temporarily disabled until release artifacts are guaranteed.
             </text>
             <text fg={theme.text}>
-              Go to <span style={{ fg: theme.primary }}>https://opencontext.ai</span> to get a key
+              Use a direct provider key instead (Anthropic/OpenAI/etc.)
             </text>
           </box>
         ) : undefined

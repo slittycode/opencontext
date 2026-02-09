@@ -33,6 +33,14 @@ export const WebCommand = cmd({
   builder: (yargs) => withNetworkOptions(yargs),
   describe: "start opencontext server and open web interface",
   handler: async (args) => {
+    if (!Flag.OPENCODE_ENABLE_WEB_BACKEND) {
+      UI.error(
+        "Web backend is disabled until release artifacts are guaranteed. Set OPENCODE_ENABLE_WEB_BACKEND=1 to enable.",
+      )
+      process.exitCode = 1
+      return
+    }
+
     if (!Flag.OPENCODE_SERVER_PASSWORD) {
       UI.println(UI.Style.TEXT_WARNING_BOLD + "!  " + "OPENCODE_SERVER_PASSWORD is not set; server is unsecured.")
     }

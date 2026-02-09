@@ -33,6 +33,7 @@ import { proxied } from "@/util/proxied"
 import { iife } from "@/util/iife"
 
 export namespace Config {
+  const CONFIG_SCHEMA_URL = "https://opencode.ai/config.json"
   const ModelId = z.string().meta({ $ref: "https://models.dev/model-schema.json#/$defs/Model" })
 
   const log = Log.create({ service: "config" })
@@ -89,7 +90,7 @@ export namespace Config {
         const wellknown = (await response.json()) as any
         const remoteConfig = wellknown.config ?? {}
         // Add $schema to prevent load() from trying to write back to a non-existent file
-        if (!remoteConfig.$schema) remoteConfig.$schema = "https://opencontext.ai/config.json"
+        if (!remoteConfig.$schema) remoteConfig.$schema = CONFIG_SCHEMA_URL
         result = mergeConfigConcatArrays(
           result,
           await load(JSON.stringify(remoteConfig), `${key}/.well-known/opencode`),
@@ -1235,7 +1236,7 @@ export namespace Config {
         .then(async (mod) => {
           const { provider, model, ...rest } = mod.default
           if (provider && model) result.model = `${provider}/${model}`
-          result["$schema"] = "https://opencontext.ai/config.json"
+          result["$schema"] = CONFIG_SCHEMA_URL
           result = mergeDeep(result, rest)
           await Bun.write(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
           await fs.unlink(legacy)
@@ -1328,9 +1329,9 @@ export namespace Config {
     const parsed = Info.safeParse(data)
     if (parsed.success) {
       if (!parsed.data.$schema) {
-        parsed.data.$schema = "https://opencontext.ai/config.json"
+        parsed.data.$schema = CONFIG_SCHEMA_URL
         // Write the $schema to the original text to preserve variables like {env:VAR}
-        const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://opencontext.ai/config.json",')
+        const updated = original.replace(/^\s*\{/, `{\n  "$schema": "${CONFIG_SCHEMA_URL}",`)
         await Bun.write(configFilepath, updated).catch(() => {})
       }
       const data = parsed.data
