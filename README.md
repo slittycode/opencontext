@@ -42,15 +42,15 @@ opencontext --version    # Show version
 
 Press `Tab` or type `/agent` to switch between agent personalities:
 
-| Agent | Description |
-|-------|-------------|
-| 🔧 **build** | Full-access coding agent (default) |
-| 📋 **plan** | Read-only code exploration |
-| 🔍 **research** | Deep research, web search, synthesis |
-| 🎓 **socratic** | Teaching through questions |
-| 📝 **cv-review** | Resume/CV analysis and improvement |
-| 💭 **brainstorm** | Creative ideation and exploration |
-| 📚 **tutor** | Patient explanations and learning |
+| Agent            | Description                          |
+| ---------------- | ------------------------------------ |
+| 🔧 **build**     | Full-access coding agent (default)   |
+| 📋 **plan**      | Read-only code exploration           |
+| 🔍 **research**  | Deep research, web search, synthesis |
+| 🎓 **socratic**  | Teaching through questions           |
+| 📝 **cv-review** | Resume/CV analysis and improvement   |
+| 💭 **brainstorm**| Creative ideation and exploration    |
+| 📚 **tutor**     | Patient explanations and learning    |
 
 Each agent has tailored permissions and prompts for its specialty.
 
