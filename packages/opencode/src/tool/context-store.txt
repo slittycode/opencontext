@@ -1,0 +1,21 @@
+A structured knowledge persistence tool for managing the user's `.context/` directory.
+
+This tool provides operations to save, search, list, and read knowledge entries in a structured `.context/` directory within the project. It maintains a manifest that tracks metadata about each entry.
+
+Use this tool when the user wants to:
+- Save knowledge, research findings, explanations, or notes for later reference
+- Search their existing knowledge base for specific topics
+- List what knowledge they have stored
+- Read a specific knowledge entry
+- Organize their knowledge into categories
+
+The `.context/` directory is the user's personal knowledge library. This tool manages the structure and manifest automatically so agents can persist and retrieve knowledge across sessions.
+
+Parameters:
+- `operation`: One of "save", "search", "list", "read", "delete"
+- `category`: Category/folder for the entry (e.g., "concepts", "research", "notes", "decisions")
+- `title`: Title for the entry (used as filename, kebab-cased automatically)
+- `content`: Markdown content to save (for "save" operation)
+- `query`: Search query string (for "search" operation)
+- `path`: Specific entry path to read or delete (for "read"/"delete" operations)
+- `tags`: Optional tags for the entry (for "save" operation)

@@ -24,12 +24,14 @@ describe("Project.fromDirectory", () => {
     expect(sandbox).toBe(tmp.path)
   })
 
-  test("uses folder-based IDs even when git exists", async () => {
+  test("uses git-based IDs when git exists", async () => {
     await using tmp = await tmpdir({ git: true })
 
     const { project } = await Project.fromDirectory(tmp.path)
 
-    expect(project.id).toStartWith("folder-")
+    // Git repos use root-commit-based IDs (upstream behavior)
+    expect(project.id).not.toBe("global")
+    expect(project.id).not.toStartWith("folder-")
     expect(project.vcs).toBe("git")
     expect(project.worktree).toBe(tmp.path)
     expect(project.sandboxes).toEqual([])

@@ -1,6 +1,8 @@
 import z from "zod"
 import fs from "fs/promises"
+import { Filesystem } from "../util/filesystem"
 import path from "path"
+import { $ } from "bun"
 import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 import { Flag } from "@/flag/flag"
@@ -8,6 +10,7 @@ import { Session } from "../session"
 import { work } from "../util/queue"
 import { fn } from "@opencode-ai/util/fn"
 import { BusEvent } from "@/bus/bus-event"
+import { iife } from "@/util/iife"
 import { GlobalBus } from "@/bus/global"
 import { existsSync } from "fs"
 
@@ -19,9 +22,11 @@ export namespace Project {
       worktree: z.string(),
       vcs: z.literal("git").optional(),
       name: z.string().optional(),
+      // --- OpenContext extensions ---
       kind: z.enum(["context", "code"]).default("context"),
       topic: z.string().optional(),
       tags: z.array(z.string()).optional(),
+      // --- End OpenContext extensions ---
       icon: z
         .object({
           url: z.string().optional(),
@@ -50,37 +55,195 @@ export namespace Project {
     Updated: BusEvent.define("project.updated", Info),
   }
 
+  // --- OpenContext extension: folder-hash fallback for non-git directories ---
+  async function folderHashID(directory: string) {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(directory))
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return (
+      "folder-" +
+      hashArray
+        .slice(0, 8)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+    )
+  }
+
+  // --- OpenContext extension: detect project kind from directory contents ---
+  function detectKind(directory: string, vcs?: "git"): "code" | "context" {
+    // If it's a git repo, check for common code indicators
+    if (vcs === "git") {
+      const codeIndicators = [
+        "package.json",
+        "Cargo.toml",
+        "go.mod",
+        "pyproject.toml",
+        "Makefile",
+        "CMakeLists.txt",
+        "pom.xml",
+        "build.gradle",
+      ]
+      for (const indicator of codeIndicators) {
+        if (existsSync(path.join(directory, indicator))) return "code"
+      }
+    }
+    return "context"
+  }
+
   export async function fromDirectory(directory: string) {
     log.info("fromDirectory", { directory })
 
-    const resolved = path.resolve(directory)
-    const canonical = await fs.realpath(resolved).catch(() => resolved)
-    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical))
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const id = "folder-" + hashArray.slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("")
-    const worktree = canonical
-    const sandbox = canonical
-    const vcs = existsSync(path.join(canonical, ".git")) ? "git" : Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS)
+    // Upstream-compatible: git-based detection as primary, folder-hash as fallback
+    const { id, sandbox, worktree, vcs } = await iife(async () => {
+      const matches = Filesystem.up({ targets: [".git"], start: directory })
+      const git = await matches.next().then((x) => x.value)
+      await matches.return()
+      if (git) {
+        // === Upstream git-based path (preserved verbatim) ===
+        let sandbox = path.dirname(git)
+
+        const gitBinary = Bun.which("git")
+
+        // cached id calculation
+        let id = await Bun.file(path.join(git, "opencode"))
+          .text()
+          .then((x) => x.trim())
+          .catch(() => undefined)
+
+        if (!gitBinary) {
+          return {
+            id: id ?? "global",
+            worktree: sandbox,
+            sandbox: sandbox,
+            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+          }
+        }
+
+        // generate id from root commit
+        if (!id) {
+          const roots = await $`git rev-list --max-parents=0 --all`
+            .quiet()
+            .nothrow()
+            .cwd(sandbox)
+            .text()
+            .then((x) =>
+              x
+                .split("\n")
+                .filter(Boolean)
+                .map((x) => x.trim())
+                .toSorted(),
+            )
+            .catch(() => undefined)
+
+          if (!roots) {
+            return {
+              id: "global",
+              worktree: sandbox,
+              sandbox: sandbox,
+              vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+            }
+          }
+
+          id = roots[0]
+          if (id) {
+            void Bun.file(path.join(git, "opencode"))
+              .write(id)
+              .catch(() => undefined)
+          }
+        }
+
+        if (!id) {
+          return {
+            id: "global",
+            worktree: sandbox,
+            sandbox: sandbox,
+            vcs: "git",
+          }
+        }
+
+        const top = await $`git rev-parse --show-toplevel`
+          .quiet()
+          .nothrow()
+          .cwd(sandbox)
+          .text()
+          .then((x) => path.resolve(sandbox, x.trim()))
+          .catch(() => undefined)
+
+        if (!top) {
+          return {
+            id,
+            sandbox,
+            worktree: sandbox,
+            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+          }
+        }
+
+        sandbox = top
+
+        const worktree = await $`git rev-parse --git-common-dir`
+          .quiet()
+          .nothrow()
+          .cwd(sandbox)
+          .text()
+          .then((x) => {
+            const dirname = path.dirname(x.trim())
+            if (dirname === ".") return sandbox
+            return dirname
+          })
+          .catch(() => undefined)
+
+        if (!worktree) {
+          return {
+            id,
+            sandbox,
+            worktree: sandbox,
+            vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+          }
+        }
+
+        return {
+          id,
+          sandbox,
+          worktree,
+          vcs: "git",
+        }
+      }
+
+      // === OpenContext fallback: folder-hash for non-git directories ===
+      const resolved = path.resolve(directory)
+      const canonical = await fs.realpath(resolved).catch(() => resolved)
+      const id = await folderHashID(canonical)
+      return {
+        id,
+        worktree: canonical,
+        sandbox: canonical,
+        vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
+      }
+    })
 
     let existing = await Storage.read<Info>(["project", id]).catch(() => undefined)
     if (!existing) {
+      // --- OpenContext: auto-detect kind for new projects ---
+      const kind = detectKind(worktree, vcs as Info["vcs"])
       existing = {
         id,
         worktree,
         vcs: vcs as Info["vcs"],
-        kind: "context",
+        kind,
         sandboxes: [],
         time: {
           created: Date.now(),
           updated: Date.now(),
         },
       }
-      await migrateFromGlobal(id, worktree)
+      if (id !== "global") {
+        await migrateFromGlobal(id, worktree)
+      }
     }
 
     // migrate old projects before sandboxes
     if (!existing.sandboxes) existing.sandboxes = []
-    if (!existing.kind) existing.kind = "context"
+    // --- OpenContext: migrate kind field ---
+    if (!existing.kind) existing.kind = detectKind(worktree, vcs as Info["vcs"])
 
     if (Flag.OPENCODE_EXPERIMENTAL_ICON_DISCOVERY) discover(existing)
 
@@ -88,7 +251,7 @@ export namespace Project {
       ...existing,
       worktree,
       vcs: vcs as Info["vcs"],
-      kind: existing.kind ?? "context",
+      kind: existing.kind,
       topic: existing.topic,
       tags: existing.tags,
       time: {

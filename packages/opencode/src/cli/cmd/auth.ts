@@ -345,7 +345,10 @@ export const AuthLoginCommand = cmd({
         }
 
         if (provider === "opencode") {
-          prompts.log.info("Create an api key at https://opencode.ai/auth")
+          prompts.log.warn(
+            "OpenContext hosted key provisioning is temporarily disabled until release artifacts are guaranteed.",
+          )
+          prompts.log.info("Use a direct provider key (Anthropic/OpenAI/etc.) for now.")
         }
 
         if (provider === "vercel") {
