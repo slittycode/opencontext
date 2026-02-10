@@ -194,8 +194,6 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
   ): Promise<Awaited<ReturnType<LanguageModelV2["doGenerate"]>>> {
     const { args, warnings } = await this.getArgs({ ...options })
 
-    const body = JSON.stringify(args)
-
     const {
       responseHeaders,
       value: responseBody,
@@ -284,7 +282,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
         cachedInputTokens: responseBody.usage?.prompt_tokens_details?.cached_tokens ?? undefined,
       },
       providerMetadata,
-      request: { body },
+      request: { body: args },
       response: {
         ...getResponseMetadata(responseBody),
         headers: responseHeaders,

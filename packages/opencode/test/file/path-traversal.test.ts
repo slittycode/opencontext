@@ -29,6 +29,32 @@ describe("Filesystem.contains", () => {
     expect(Filesystem.contains("/project", "/project-other/file")).toBe(false)
     expect(Filesystem.contains("/project", "/projectfile")).toBe(false)
   })
+
+  test("blocks symlink escapes when target exists outside project", async () => {
+    await using outside = await tmpdir({
+      init: async (dir) => {
+        const outsideFile = path.join(dir, "outside.txt")
+        await Bun.write(outsideFile, "outside content")
+        return { outsideFile }
+      },
+    })
+
+    await using project = await tmpdir({
+      init: async (dir) => {
+        const linkPath = path.join(dir, "escape-link.txt")
+        try {
+          await fs.symlink(outside.extra.outsideFile, linkPath)
+        } catch (error: any) {
+          if (process.platform === "win32" && (error?.code === "EPERM" || error?.code === "EINVAL")) return
+          throw error
+        }
+      },
+    })
+
+    const link = path.join(project.path, "escape-link.txt")
+    if (!(await Bun.file(link).exists())) return
+    expect(Filesystem.contains(project.path, link)).toBe(false)
+  })
 })
 
 /*
@@ -81,6 +107,53 @@ describe("File.read path traversal protection", () => {
       fn: async () => {
         const result = await File.read("valid.txt")
         expect(result.content).toBe("valid content")
+      },
+    })
+  })
+
+  test("rejects symlink that resolves outside project", async () => {
+    await using outside = await tmpdir({
+      init: async (dir) => {
+        const outsideFile = path.join(dir, "outside.txt")
+        await Bun.write(outsideFile, "outside content")
+        return { outsideFile }
+      },
+    })
+
+    await using project = await tmpdir({
+      init: async (dir) => {
+        try {
+          await fs.symlink(outside.extra.outsideFile, path.join(dir, "escape-link.txt"))
+        } catch (error: any) {
+          if (process.platform === "win32" && (error?.code === "EPERM" || error?.code === "EINVAL")) return
+          throw error
+        }
+      },
+    })
+
+    const link = path.join(project.path, "escape-link.txt")
+    if (!(await Bun.file(link).exists())) return
+
+    await Instance.provide({
+      directory: project.path,
+      fn: async () => {
+        await expect(File.read("escape-link.txt")).rejects.toThrow("Access denied: path escapes project directory")
+      },
+    })
+  })
+
+  test("preserves leading/trailing whitespace and trailing newlines", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(path.join(dir, "whitespace.txt"), "  leading\nmiddle  \n\n")
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const result = await File.read("whitespace.txt")
+        expect(result.content).toBe("  leading\nmiddle  \n\n")
       },
     })
   })
@@ -192,6 +265,38 @@ describe("Instance.containsPath", () => {
         expect(Instance.containsPath(path.join(tmp.path, "file.txt"))).toBe(true)
         expect(Instance.containsPath("/etc/passwd")).toBe(false)
         expect(Instance.containsPath("/tmp/other")).toBe(false)
+      },
+    })
+  })
+})
+
+describe("File.status", () => {
+  test("reports repo-relative paths and accurate line counts for untracked files", async () => {
+    await using tmp = await tmpdir({
+      git: true,
+      init: async (dir) => {
+        await Bun.write(path.join(dir, "empty.txt"), "")
+        await Bun.write(path.join(dir, "one-line.txt"), "hello\n")
+        await Bun.write(path.join(dir, "nested", "no-newline.txt"), "alpha")
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const status = await File.status()
+        const normalize = (p: string) => p.replaceAll("\\", "/")
+        const byPath = new Map(status.map((entry) => [normalize(entry.path), entry]))
+
+        expect(byPath.get("empty.txt")?.status).toBe("added")
+        expect(byPath.get("empty.txt")?.added).toBe(0)
+        expect(byPath.get("one-line.txt")?.added).toBe(1)
+        expect(byPath.get("nested/no-newline.txt")?.added).toBe(1)
+
+        for (const entry of status) {
+          expect(path.isAbsolute(entry.path)).toBe(false)
+          expect(normalize(entry.path).startsWith("../")).toBe(false)
+        }
       },
     })
   })

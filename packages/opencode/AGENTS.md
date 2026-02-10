@@ -1,27 +1,61 @@
-# opencode agent guidelines
+# OpenContext Core Agent Guidelines (`packages/opencode`)
 
-## Build/Test Commands
+This file is package-scoped guidance for agents working in the OpenContext core CLI/TUI package.
 
-- **Install**: `bun install`
-- **Run**: `bun run --conditions=browser ./src/index.ts`
-- **Typecheck**: `bun run typecheck` (npm run typecheck)
-- **Test**: `bun test` (runs all tests)
-- **Single test**: `bun test test/tool/tool.test.ts` (specific test file)
+## Primary Commands
 
-## Code Style
+Run from repo root unless noted:
 
-- **Runtime**: Bun with TypeScript ESM modules
-- **Imports**: Use relative imports for local modules, named imports preferred
-- **Types**: Zod schemas for validation, TypeScript interfaces for structure
-- **Naming**: camelCase for variables/functions, PascalCase for classes/namespaces
-- **Error handling**: Use Result patterns, avoid throwing exceptions in tools
-- **File structure**: Namespace-based organization (e.g., `Tool.define()`, `Session.create()`)
+- Install deps: `bun install`
+- Core dev run: `bun run --cwd packages/opencode --conditions=browser src/index.ts`
+- Typecheck (workspace): `bun run typecheck`
+- Test (core package): `bun --cwd packages/opencode test`
+- Single test file: `bun --cwd packages/opencode test test/path/to/file.test.ts`
+- Build single local binary: `bun run --cwd packages/opencode script/build.ts --single --skip-install`
 
-## Architecture
+## High-Value File Map
 
-- **Tools**: Implement `Tool.Info` interface with `execute()` method
-- **Context**: Pass `sessionID` in tool context, use `App.provide()` for DI
-- **Validation**: All inputs validated with Zod schemas
-- **Logging**: Use `Log.create({ service: "name" })` pattern
-- **Storage**: Use `Storage` namespace for persistence
-- **API Client**: The TypeScript TUI (built with SolidJS + OpenTUI) communicates with the OpenCode server using `@opencode-ai/sdk`. When adding/modifying server endpoints in `packages/opencode/src/server/server.ts`, run `./script/generate.ts` to regenerate the SDK and related files.
+- CLI entrypoint + command wiring: `packages/opencode/src/index.ts`
+- Agent registry + defaults: `packages/opencode/src/agent/agent.ts`
+- OpenContext-specific built-in agents: `packages/opencode/src/agent/context-agents.ts`
+- OpenContext agent prompt text: `packages/opencode/src/agent/prompt/*.txt`
+- TUI command palette/slash commands: `packages/opencode/src/cli/cmd/tui/app.tsx`
+- MCP CLI commands: `packages/opencode/src/cli/cmd/mcp.ts`
+- Config schema and config load precedence: `packages/opencode/src/config/config.ts`
+- Server routes: `packages/opencode/src/server/server.ts`
+
+## Naming And Compatibility Rules
+
+- Prefer `opencontext` in all user-facing copy.
+- Keep `opencode` aliases only where compatibility is explicitly intended.
+- Do not ungate installer/upgrade release behavior until release artifacts are guaranteed.
+
+## Agent Changes Checklist
+
+If you add or modify built-in agents:
+
+1. Update agent definitions in `packages/opencode/src/agent/agent.ts` or `packages/opencode/src/agent/context-agents.ts`.
+2. Add/update prompt files in `packages/opencode/src/agent/prompt/`.
+3. Ensure prompts are tracked in git and included in packaging paths.
+4. Update user-facing docs in `README.md` when visible behavior changes.
+5. Validate with `bun run typecheck` and `bun --cwd packages/opencode test`.
+
+## MCP Behavior Notes
+
+- CLI uses `opencontext mcp ...` commands.
+- TUI slash command for MCP dialog is `/mcps` (plural).
+- MCP auth/token storage path is `~/.local/share/opencontext/mcp-auth.json`.
+
+## Implementation Conventions
+
+- Runtime: Bun + TypeScript (ESM).
+- Validation: Zod schemas for config/input boundaries.
+- Logging: `Log.create({ service: "..." })`.
+- Keep file-level abstractions namespace-oriented and explicit (`Tool`, `Session`, `Config`, `Agent`).
+- Prefer additive compatibility migrations over abrupt config breakage.
+
+## API/SDK Synchronization
+
+If server routes change, regenerate SDK artifacts before finalizing:
+
+- `./script/generate.ts`

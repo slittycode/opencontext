@@ -1,5 +1,5 @@
 import { realpathSync } from "fs"
-import { dirname, join, relative } from "path"
+import { basename, dirname, isAbsolute, join, relative, resolve } from "path"
 
 export namespace Filesystem {
   export const exists = (p: string) =>
@@ -33,7 +33,13 @@ export namespace Filesystem {
   }
 
   export function contains(parent: string, child: string) {
-    return !relative(parent, child).startsWith("..")
+    const parentAbsolute = resolve(parent)
+    const childAbsolute = resolve(child)
+    if (!containsLexical(parentAbsolute, childAbsolute)) return false
+
+    const canonicalParent = canonicalize(parentAbsolute)
+    const canonicalChild = canonicalize(childAbsolute)
+    return containsLexical(canonicalParent, canonicalChild)
   }
 
   export async function findUp(target: string, start: string, stop?: string) {
@@ -89,5 +95,30 @@ export namespace Filesystem {
       current = parent
     }
     return result
+  }
+
+  function containsLexical(parent: string, child: string) {
+    const rel = relative(parent, child)
+    if (rel === "") return true
+    if (rel.startsWith("..")) return false
+    if (isAbsolute(rel)) return false
+    return true
+  }
+
+  function canonicalize(input: string) {
+    const absolute = resolve(input)
+    const missing: string[] = []
+    let probe = absolute
+    while (true) {
+      try {
+        const resolved = realpathSync.native(probe)
+        return missing.length === 0 ? resolved : join(resolved, ...missing)
+      } catch {
+        const parent = dirname(probe)
+        if (parent === probe) return absolute
+        missing.unshift(basename(probe))
+        probe = parent
+      }
+    }
   }
 }

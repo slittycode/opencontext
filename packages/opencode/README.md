@@ -1,15 +1,45 @@
-# js
+# OpenContext Core (`packages/opencode`)
 
-To install dependencies:
+Core CLI/TUI runtime for OpenContext (forked from OpenCode).
+
+## Local Development
+
+From repo root:
 
 ```bash
 bun install
+bun run --cwd packages/opencode --conditions=browser src/index.ts
 ```
 
-To run:
+Or from this directory:
 
 ```bash
-bun run index.ts
+bun install
+bun run --conditions=browser ./src/index.ts
 ```
 
-This project was created using `bun init` in bun v1.2.12. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+## Validate Changes
+
+From repo root:
+
+```bash
+bun run typecheck
+bun --cwd packages/opencode test
+```
+
+For binary/build path changes:
+
+```bash
+bun run --cwd packages/opencode script/build.ts --single --skip-install
+```
+
+## Key Paths
+
+- Agent registry: `src/agent/agent.ts`
+- OpenContext agents: `src/agent/context-agents.ts`
+- Agent prompts: `src/agent/prompt/`
+- TUI slash commands/dialogs: `src/cli/cmd/tui/`
+- MCP command surface: `src/cli/cmd/mcp.ts`
+- Config schema/loading: `src/config/config.ts`
+
+For contributor/agent-specific working rules, see `AGENTS.md` in this directory and repo root.
