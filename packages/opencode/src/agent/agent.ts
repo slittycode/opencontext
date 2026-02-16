@@ -20,6 +20,7 @@ import { Global } from "@/global"
 import path from "path"
 import { Plugin } from "@/plugin"
 import { Skill } from "../skill"
+import { canonicalizeAgentName, LEGACY_AGENT_REMOVAL_TARGET } from "./legacy-agents"
 
 export namespace Agent {
   export const Info = z
@@ -48,6 +49,20 @@ export namespace Agent {
       ref: "Agent",
     })
   export type Info = z.infer<typeof Info>
+
+  export type ResolveResult = {
+    requested: string
+    canonical: string
+    agent?: Info
+    deprecated?:
+      | {
+          from: string
+          to: string
+          removeAfter: string
+          message: string
+        }
+      | undefined
+  }
 
   const state = Instance.state(async () => {
     const cfg = await Config.get()
@@ -270,16 +285,41 @@ export namespace Agent {
     return result
   })
 
+  export async function resolve(agent: string): Promise<ResolveResult> {
+    const resolution = canonicalizeAgentName(agent)
+    const value = await state().then((x) => x[resolution.canonical])
+    return {
+      requested: agent,
+      canonical: resolution.canonical,
+      agent: value,
+      deprecated: resolution.aliased
+        ? {
+            from: resolution.input,
+            to: resolution.canonical,
+            removeAfter: LEGACY_AGENT_REMOVAL_TARGET,
+            message:
+              resolution.message ??
+              `Agent "${resolution.input}" is deprecated and now maps to "${resolution.canonical}".`,
+          }
+        : undefined,
+    }
+  }
+
+  export async function canonical(agent: string): Promise<string> {
+    return resolve(agent).then((x) => x.canonical)
+  }
+
   export async function get(agent: string) {
-    return state().then((x) => x[agent])
+    return resolve(agent).then((x) => x.agent)
   }
 
   export async function list() {
     const cfg = await Config.get()
+    const defaultAgent = cfg.default_agent ? canonicalizeAgentName(cfg.default_agent).canonical : undefined
     return pipe(
       await state(),
       values(),
-      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "coding"), "desc"]),
+      sortBy([(x) => (defaultAgent ? x.name === defaultAgent : x.name === "coding"), "desc"]),
     )
   }
 
@@ -288,7 +328,8 @@ export namespace Agent {
     const agents = await state()
 
     if (cfg.default_agent) {
-      const agent = agents[cfg.default_agent]
+      const canonical = canonicalizeAgentName(cfg.default_agent).canonical
+      const agent = agents[canonical]
       if (!agent) throw new Error(`default agent "${cfg.default_agent}" not found`)
       if (agent.mode === "subagent") throw new Error(`default agent "${cfg.default_agent}" is a subagent`)
       if (agent.hidden === true) throw new Error(`default agent "${cfg.default_agent}" is hidden`)

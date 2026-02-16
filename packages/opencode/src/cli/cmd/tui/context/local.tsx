@@ -12,6 +12,7 @@ import { Provider } from "@/provider/provider"
 import { useArgs } from "./args"
 import { useSDK } from "./sdk"
 import { RGBA } from "@opentui/core"
+import type { AgentProfileMetadata } from "@/agent/agent-profiles"
 
 export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
   name: "Local",
@@ -38,9 +39,46 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       const visibleAgents = createMemo(() => sync.data.agent.filter((x) => !x.hidden))
       const [agentStore, setAgentStore] = createStore<{
         current: string
+        mode: Record<string, string | undefined>
+        ready: boolean
       }>({
         current: agents()[0].name,
+        mode: {},
+        ready: false,
       })
+
+      const modeFile = Bun.file(path.join(Global.Path.state, "agent-mode.json"))
+      const modeState = {
+        pending: false,
+      }
+
+      function saveModes() {
+        if (!agentStore.ready) {
+          modeState.pending = true
+          return
+        }
+        modeState.pending = false
+        Bun.write(
+          modeFile,
+          JSON.stringify({
+            mode: agentStore.mode,
+          }),
+        )
+      }
+
+      modeFile
+        .json()
+        .then((x) => {
+          if (typeof x.mode === "object" && x.mode !== null) {
+            setAgentStore("mode", x.mode as Record<string, string | undefined>)
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          setAgentStore("ready", true)
+          if (modeState.pending) saveModes()
+        })
+
       const { theme } = useTheme()
       const colors = createMemo(() => [
         theme.secondary,
@@ -51,9 +89,47 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         theme.error,
         theme.info,
       ])
+
+      function profile(name: string): AgentProfileMetadata | undefined {
+        const raw = sync.data.agent.find((x) => x.name === name)?.options?.profile
+        if (!raw || typeof raw !== "object") return undefined
+        return raw as AgentProfileMetadata
+      }
+
+      function modeList(name: string) {
+        return profile(name)?.modes ?? []
+      }
+
+      function selectedModeID(name: string) {
+        return agentStore.mode[name]
+      }
+
+      function normalizedMode(name: string) {
+        const options = modeList(name)
+        if (!options.length) return undefined
+
+        const selected = selectedModeID(name)
+        if (selected) {
+          const match = options.find((item) => item.id === selected)
+          if (match) return match
+        }
+
+        const defaultMode = profile(name)?.defaultMode
+        if (defaultMode) {
+          const match = options.find((item) => item.id === defaultMode)
+          if (match) return match
+        }
+
+        return options[0]
+      }
+
       return {
         list() {
           return agents()
+        },
+        profile,
+        all() {
+          return visibleAgents()
         },
         current() {
           return agents().find((x) => x.name === agentStore.current)!
@@ -88,6 +164,28 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
             return theme[color as keyof typeof theme] as RGBA
           }
           return colors()[index % colors().length]
+        },
+        mode: {
+          list(name = agentStore.current) {
+            return modeList(name)
+          },
+          current(name = agentStore.current) {
+            return normalizedMode(name)
+          },
+          set(value: string | undefined, name = agentStore.current) {
+            const options = modeList(name)
+            if (!options.length) return
+            if (value !== undefined && !options.some((x) => x.id === value)) {
+              toast.show({
+                variant: "warning",
+                message: `Mode not available for agent ${name}: ${value}`,
+                duration: 3000,
+              })
+              return
+            }
+            setAgentStore("mode", name, value)
+            saveModes()
+          },
         },
       }
     })

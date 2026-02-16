@@ -557,6 +557,16 @@ export function Prompt(props: PromptProps) {
     // Capture mode before it gets reset
     const currentMode = store.mode
     const variant = local.model.variant.current()
+    const activeAgentMode = local.agent.mode.current(local.agent.current().name)
+    const modeSystem = activeAgentMode
+      ? [
+          "Agent mode override (user-selected):",
+          `- Mode ID: ${activeAgentMode.id}`,
+          `- Mode label: ${activeAgentMode.label}`,
+          `- Behavior: ${activeAgentMode.description}`,
+          "Use this mode as the primary behavioral lens for this turn.",
+        ].join("\n")
+      : undefined
 
     if (store.mode === "shell") {
       sdk.client.session.shell({
@@ -608,6 +618,7 @@ export function Prompt(props: PromptProps) {
           agent: local.agent.current().name,
           model: selectedModel,
           variant,
+          system: modeSystem,
           parts: [
             {
               id: Identifier.ascending("part"),
@@ -975,7 +986,13 @@ export function Prompt(props: PromptProps) {
             />
             <box flexDirection="row" flexShrink={0} paddingTop={1} gap={1}>
               <text fg={highlight()}>
-                {store.mode === "shell" ? "Shell" : Locale.titlecase(local.agent.current().name)}{" "}
+                {store.mode === "shell"
+                  ? "Shell"
+                  : `${Locale.titlecase(local.agent.current().name)}${
+                      local.agent.mode.current(local.agent.current().name)
+                        ? ` (${local.agent.mode.current(local.agent.current().name)!.label})`
+                        : ""
+                    }`}{" "}
               </text>
               <Show when={store.mode === "normal"}>
                 <box flexDirection="row" gap={1}>

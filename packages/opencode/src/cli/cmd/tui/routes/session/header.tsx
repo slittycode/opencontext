@@ -69,6 +69,7 @@ export function Header() {
   const dimensions = useTerminalDimensions()
   const narrow = createMemo(() => dimensions().width < 80)
   const currentAgent = createMemo(() => local.agent.current())
+  const currentMode = createMemo(() => local.agent.mode.current(currentAgent().name))
 
   return (
     <box flexShrink={0}>
@@ -94,6 +95,9 @@ export function Header() {
                   <text fg={theme.text}>
                     <span style={{ fg: local.agent.color(currentAgent().name) }}>●</span>{" "}
                     <b>{currentAgent().name}</b>
+                    <Show when={currentMode()}>
+                      <span style={{ fg: theme.textMuted }}> · {currentMode()!.label}</span>
+                    </Show>
                   </text>
                 </box>
                 <box flexDirection="row" gap={1} flexShrink={0}>
@@ -142,6 +146,9 @@ export function Header() {
                 <text fg={theme.text}>
                   <span style={{ fg: local.agent.color(currentAgent().name) }}>●</span>{" "}
                   <b>{currentAgent().name}</b>
+                  <Show when={currentMode()}>
+                    <span style={{ fg: theme.textMuted }}> · {currentMode()!.label}</span>
+                  </Show>
                 </text>
               </box>
               <box flexDirection="row" gap={1} flexShrink={0}>

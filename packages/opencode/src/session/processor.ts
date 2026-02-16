@@ -2,7 +2,6 @@ import { MessageV2 } from "./message-v2"
 import { Log } from "@/util/log"
 import { Identifier } from "@/id/id"
 import { Session } from "."
-import { Agent } from "@/agent/agent"
 import { Snapshot } from "@/snapshot"
 import { SessionSummary } from "./summary"
 import { Bus } from "@/bus"
@@ -15,10 +14,12 @@ import { Config } from "@/config/config"
 import { SessionCompaction } from "./compaction"
 import { PermissionNext } from "@/permission/next"
 import { Question } from "@/question"
+import { resolveSessionAgent } from "./agent-resolution"
 
 export namespace SessionProcessor {
   const DOOM_LOOP_THRESHOLD = 3
   const log = Log.create({ service: "session.processor" })
+  const DENY_ALL_RULESET = PermissionNext.fromConfig({ "*": "deny" })
 
   export type Info = Awaited<ReturnType<typeof create>>
   export type Result = Awaited<ReturnType<Info["process"]>>
@@ -153,7 +154,12 @@ export namespace SessionProcessor {
                           JSON.stringify(p.state.input) === JSON.stringify(value.input),
                       )
                     ) {
-                      const agent = await Agent.get(input.assistantMessage.agent)
+                      const agentResolution = await resolveSessionAgent({
+                        requested: input.assistantMessage.agent,
+                        context: "doom_loop",
+                        mode: "none",
+                        sessionID: input.assistantMessage.sessionID,
+                      })
                       await PermissionNext.ask({
                         permission: "doom_loop",
                         patterns: [value.toolName],
@@ -163,7 +169,7 @@ export namespace SessionProcessor {
                           input: value.input,
                         },
                         always: [value.toolName],
-                        ruleset: agent.permission,
+                        ruleset: agentResolution.agent?.permission ?? DENY_ALL_RULESET,
                       })
                     }
                   }

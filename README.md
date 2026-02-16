@@ -46,15 +46,11 @@ Press `Tab` or type `/agents` to switch between primary agent personalities:
 | ------------------ | --------- | --------------------------------------------------------------- |
 | 🔧 **coding**      | primary   | Full-access coding agent (default)                              |
 | 📋 **plan**        | primary   | Planning mode with file edits disabled                          |
-| 🔍 **research**    | primary   | Deep research, web search, synthesis                            |
-| 🎓 **socratic**    | primary   | Teaching through questions                                      |
-| 📝 **cv-review**   | primary   | Resume/CV analysis and improvement                              |
-| 💭 **brainstorm**  | primary   | Creative ideation and concept exploration                       |
-| 📚 **tutor**       | primary   | Patient explanations and learning support                       |
-| 🧠 **educator**    | primary   | Adaptive-depth technical teaching and concept development        |
-| ✨ **ideator**     | primary   | Open-ended ideation across product, technical, and creative work |
-| 🧪 **deep-researcher** | primary | Comprehensive multi-source research with credibility evaluation |
-| 🧰 **code-expert** | primary   | Code understanding, implementation, and improvement              |
+| 🔍 **researcher**  | primary   | Multi-source research and evidence-based synthesis              |
+| 🎓 **teacher**     | primary   | Adaptive explanations and guided learning                       |
+| ✨ **ideator**     | primary   | Creative ideation and structured idea evaluation                |
+| 📝 **career**      | primary   | Career strategy, CV/resume, interview preparation              |
+| 🧰 **codeexpert**  | primary   | Code understanding, implementation, and improvement             |
 
 Subagents also available: `general` and `explore`.
 Legacy alias: `build` maps to `coding` and is hidden by default.
@@ -93,7 +89,7 @@ Create `~/.config/opencontext/opencontext.json`:
       "api_key": "sk-..."
     }
   },
-  "default_agent": "research"
+  "default_agent": "researcher"
 }
 ```
 

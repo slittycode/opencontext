@@ -1,5 +1,5 @@
 import { useSync } from "@tui/context/sync"
-import { createMemo, For, Show, Switch, Match } from "solid-js"
+import { createEffect, createMemo, For, Show, Switch, Match } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useTheme } from "../../context/theme"
 import { Locale } from "@/util/locale"
@@ -11,20 +11,29 @@ import { useKeybind } from "../../context/keybind"
 import { useDirectory } from "../../context/directory"
 import { useKV } from "../../context/kv"
 import { TodoItem } from "../../component/todo-item"
+import { usePromptRef } from "../../context/prompt"
 
 export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
   const sync = useSync()
   const { theme } = useTheme()
+  const promptRef = usePromptRef()
   const session = createMemo(() => sync.session.get(props.sessionID)!)
   const diff = createMemo(() => sync.data.session_diff[props.sessionID] ?? [])
   const todo = createMemo(() => sync.data.todo[props.sessionID] ?? [])
   const messages = createMemo(() => sync.data.message[props.sessionID] ?? [])
+  const knowledge = createMemo(() => sync.data.context[props.sessionID] ?? [])
 
   const [expanded, setExpanded] = createStore({
     mcp: true,
     diff: true,
     todo: true,
     lsp: true,
+    knowledge: true,
+  })
+  const [knowledgeState, setKnowledgeState] = createStore({
+    query: "",
+    selectedPath: undefined as string | undefined,
+    selectedContent: undefined as string | undefined,
   })
 
   // Sort MCP servers alphabetically for consistent display order
@@ -67,6 +76,29 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
     sync.data.provider.some((x) => x.id !== "opencode" || Object.values(x.models).some((y) => y.cost?.input !== 0)),
   )
   const gettingStartedDismissed = createMemo(() => kv.get("dismissed_getting_started", false))
+
+  createEffect(() => {
+    if (knowledge().length > 0) return
+    void sync.session.syncContext(props.sessionID)
+  })
+
+  async function openKnowledge(entryPath: string) {
+    const content = await sync.session.readContext(props.sessionID, entryPath)
+    if (!content) return
+    setKnowledgeState("selectedPath", entryPath)
+    setKnowledgeState("selectedContent", content)
+  }
+
+  function insertKnowledge() {
+    const content = knowledgeState.selectedContent
+    if (!content) return
+    const current = promptRef.current?.current
+    promptRef.current?.set({
+      input: current?.input ? `${current.input}\\n\\n${content}` : content,
+      parts: current?.parts ?? [],
+    })
+    promptRef.current?.focus()
+  }
 
   return (
     <Show when={session()}>
@@ -221,6 +253,67 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
                 </Show>
               </box>
             </Show>
+            <box>
+              <box
+                flexDirection="row"
+                gap={1}
+                onMouseDown={() => knowledge().length > 3 && setExpanded("knowledge", !expanded.knowledge)}
+              >
+                <Show when={knowledge().length > 3}>
+                  <text fg={theme.text}>{expanded.knowledge ? "▼" : "▶"}</text>
+                </Show>
+                <text fg={theme.text}>
+                  <b>Knowledge</b>
+                </text>
+                <text fg={theme.textMuted} onMouseDown={() => sync.session.syncContext(props.sessionID)}>
+                  refresh
+                </text>
+              </box>
+              <Show when={expanded.knowledge || knowledge().length <= 3}>
+                <box paddingTop={1} paddingBottom={1}>
+                  <input
+                    placeholder="Search context"
+                    focusedBackgroundColor={theme.backgroundElement}
+                    cursorColor={theme.primary}
+                    focusedTextColor={theme.text}
+                    onInput={(value) => {
+                      setKnowledgeState("query", value)
+                      void sync.session.syncContext(props.sessionID, { query: value || undefined })
+                    }}
+                  />
+                </box>
+                <Show when={knowledge().length > 0} fallback={<text fg={theme.textMuted}>No context entries</text>}>
+                  <For each={knowledge().slice(0, 8)}>
+                    {(entry) => (
+                      <box
+                        flexDirection="row"
+                        gap={1}
+                        onMouseUp={() => openKnowledge(entry.path)}
+                        backgroundColor={knowledgeState.selectedPath === entry.path ? theme.backgroundElement : undefined}
+                      >
+                        <text fg={theme.textMuted} flexShrink={0}>
+                          •
+                        </text>
+                        <text fg={theme.text} wrapMode="none">
+                          {entry.title}
+                        </text>
+                      </box>
+                    )}
+                  </For>
+                </Show>
+                <Show when={knowledgeState.selectedPath && knowledgeState.selectedContent}>
+                  <box paddingTop={1} gap={1}>
+                    <text fg={theme.textMuted}>{knowledgeState.selectedPath}</text>
+                    <text fg={theme.textMuted} wrapMode="word">
+                      {knowledgeState.selectedContent!.slice(0, 280)}
+                    </text>
+                    <text fg={theme.text} onMouseDown={insertKnowledge}>
+                      insert into prompt
+                    </text>
+                  </box>
+                </Show>
+              </Show>
+            </box>
             <Show when={diff().length > 0}>
               <box>
                 <box

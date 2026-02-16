@@ -16,9 +16,9 @@ OpenContext is a fork of [OpenCode](https://github.com/anomalyco/opencode), the 
 
 OpenCode's architecture—agents with tailored permissions, session persistence, multi-provider LLM support—is powerful for more than just coding. OpenContext leverages this infrastructure for general-purpose AI interactions:
 
-- **Agent Personas** — Switch between specialized personalities (research, tutor, brainstorm) rather than a single "coding" mode
+- **Agent Personas** — Switch between specialized personalities (`researcher`, `teacher`, `ideator`, `career`, `codeexpert`) rather than a single "coding" mode
 - **Discussion Workspaces** — Any folder becomes a context (no git repository required)
-- **Permission-Based Tools** — Each agent has appropriate capabilities (research can search the web but can't edit files)
+- **Permission-Based Tools** — Each agent has appropriate capabilities (`researcher` can search the web but cannot edit files)
 
 ### Design Principles
 
@@ -36,13 +36,13 @@ OpenCode's architecture—agents with tailored permissions, session persistence,
 | Feature | Status |
 |---------|--------|
 | Multi-agent system with switchable personalities | ✅ Implemented |
-| Research agent with web search | ✅ Implemented |
-| Socratic teaching agent | ✅ Implemented |
-| CV/resume review agent | ✅ Implemented |
-| Brainstorm/ideation agent | ✅ Implemented |
-| Tutor agent for learning | ✅ Implemented |
+| Research agent (`researcher`) with web search | ✅ Implemented |
+| Teaching agent (`teacher`) | ✅ Implemented |
+| Career development agent (`career`) | ✅ Implemented |
+| Ideation agent (`ideator`) | ✅ Implemented |
+| Code specialist (`codeexpert`) | ✅ Implemented |
 | Folder-based project detection (no git required) | ✅ Implemented |
-| All OpenCode coding features (build, plan agents) | ✅ Preserved |
+| All OpenCode coding features (`coding`, `plan` agents) | ✅ Preserved |
 | 30+ LLM provider support | ✅ Inherited |
 | Custom agent configuration | ✅ Inherited |
 
@@ -75,13 +75,13 @@ OpenCode's architecture—agents with tailored permissions, session persistence,
 ### What Was Changed
 
 1. **Rebranding** — `opencode` → `opencontext` in package names, CLI, and prompts
-2. **Agent Expansion** — Added 5 new agent personalities with tailored prompts/permissions
+2. **Agent Consolidation** — Moved to 5 specialist personas with compatibility aliases for retired IDs
 3. **Project Detection** — Folder-based hashing instead of requiring `.git`
 4. **System Prompts** — Updated to reflect versatile AI assistant role
 
 ### What Was Preserved
 
-- Full coding agent capabilities (`build`, `plan`)
+- Full coding agent capabilities (`coding`, `plan`)
 - TUI architecture and styling
 - Session management and persistence
 - All tool implementations
@@ -139,10 +139,10 @@ packages/
 
 The developer's goal was to have a single, powerful terminal tool that adapts to context:
 
-- **Morning research session** → Switch to `research` agent
-- **Afternoon coding** → Switch to `build` agent  
-- **Evening learning** → Switch to `tutor` agent
-- **Job hunting** → Switch to `cv-review` agent
+- **Morning research session** → Switch to `researcher` agent
+- **Afternoon coding** → Switch to `coding` agent  
+- **Evening learning** → Switch to `teacher` agent
+- **Job hunting** → Switch to `career` agent
 
 One persistent tool, many personalities, all conversations preserved.
 

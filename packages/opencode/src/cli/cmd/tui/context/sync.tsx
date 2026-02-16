@@ -29,6 +29,17 @@ import { batch, onMount } from "solid-js"
 import { Log } from "@/util/log"
 import type { Path } from "@opencode-ai/sdk"
 
+type ContextEntry = {
+  path: string
+  title: string
+  category: string
+  tags: string[]
+  createdAt: number
+  updatedAt: number
+  createdBy?: string
+  summary?: string
+}
+
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   name: "Sync",
   init: () => {
@@ -73,6 +84,12 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       formatter: FormatterStatus[]
       vcs: VcsInfo | undefined
       path: Path
+      context: {
+        [sessionID: string]: ContextEntry[]
+      }
+      context_content: {
+        [sessionID: string]: Record<string, string>
+      }
     }>({
       provider_next: {
         all: [],
@@ -100,6 +117,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       formatter: [],
       vcs: undefined,
       path: { state: "", config: "", worktree: "", directory: "" },
+      context: {},
+      context_content: {},
     })
 
     const sdk = useSDK()
@@ -447,6 +466,13 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             sdk.client.session.todo({ sessionID }),
             sdk.client.session.diff({ sessionID }),
           ])
+          const directory = session.data?.directory
+          const context = await fetch(
+            `${sdk.url}/session/${sessionID}/context${directory ? `?directory=${encodeURIComponent(directory)}` : ""}`,
+          )
+            .then((res) => (res.ok ? res.json() : { entries: [] }))
+            .catch(() => ({ entries: [] }))
+
           setStore(
             produce((draft) => {
               const match = Binary.search(draft.session, sessionID, (s) => s.id)
@@ -458,9 +484,43 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
                 draft.part[message.info.id] = message.parts
               }
               draft.session_diff[sessionID] = diff.data ?? []
+              draft.context[sessionID] = context.entries ?? []
+              draft.context_content[sessionID] = draft.context_content[sessionID] ?? {}
             }),
           )
           fullSyncedSessions.add(sessionID)
+        },
+        async syncContext(sessionID: string, input?: { query?: string; category?: string }) {
+          const session = result.session.get(sessionID)
+          if (!session) return
+          const params = new URLSearchParams()
+          params.set("directory", session.directory)
+          if (input?.query) params.set("query", input.query)
+          if (input?.category) params.set("category", input.category)
+
+          const response = await fetch(`${sdk.url}/session/${sessionID}/context?${params.toString()}`)
+            .then((res) => (res.ok ? res.json() : { entries: [] }))
+            .catch(() => ({ entries: [] }))
+
+          setStore("context", sessionID, response.entries ?? [])
+        },
+        async readContext(sessionID: string, entryPath: string) {
+          const session = result.session.get(sessionID)
+          if (!session) return undefined
+
+          const cached = store.context_content[sessionID]?.[entryPath]
+          if (cached !== undefined) return cached
+
+          const params = new URLSearchParams()
+          params.set("directory", session.directory)
+          params.set("path", entryPath)
+          const response = await fetch(`${sdk.url}/session/${sessionID}/context/read?${params.toString()}`)
+            .then((res) => (res.ok ? res.json() : undefined))
+            .catch(() => undefined)
+
+          if (!response?.content) return undefined
+          setStore("context_content", sessionID, entryPath, response.content)
+          return response.content as string
         },
       },
       bootstrap,

@@ -4,6 +4,7 @@ import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { Agent } from "../../src/agent/agent"
 import { PermissionNext } from "../../src/permission/next"
+import { AGENT_PROFILE_MANIFEST } from "../../src/agent/agent-profiles"
 
 // Helper to evaluate permission for a tool with wildcard pattern
 function evalPerm(agent: Agent.Info | undefined, permission: string): PermissionNext.Action | undefined {
@@ -760,7 +761,7 @@ test("ideator agent has correct properties and high temperature", async () => {
       // Creative tools allowed
       expect(evalPerm(ideator, "websearch")).toBe("allow")
       expect(evalPerm(ideator, "read")).toBe("allow")
-      expect(evalPerm(ideator, "write")).toBe("allow")
+      expect(evalPerm(ideator, "write")).toBe("deny")
       expect(evalPerm(ideator, "context_store")).toBe("allow")
       // Code editing denied
       expect(evalPerm(ideator, "edit")).toBe("deny")
@@ -812,20 +813,51 @@ test("codeexpert agent has correct properties and full permissions", async () =>
   })
 })
 
-test("old agent names no longer resolve", async () => {
+test("legacy agent names resolve to canonical agents", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      // All these were consolidated into new agents
-      expect(await Agent.get("research")).toBeUndefined()
-      expect(await Agent.get("deep-researcher")).toBeUndefined()
-      expect(await Agent.get("socratic")).toBeUndefined()
-      expect(await Agent.get("tutor")).toBeUndefined()
-      expect(await Agent.get("educator")).toBeUndefined()
-      expect(await Agent.get("brainstorm")).toBeUndefined()
-      expect(await Agent.get("cv-review")).toBeUndefined()
-      expect(await Agent.get("code-expert")).toBeUndefined()
+      expect((await Agent.get("research"))?.name).toBe("researcher")
+      expect((await Agent.get("deep-researcher"))?.name).toBe("researcher")
+      expect((await Agent.get("socratic"))?.name).toBe("teacher")
+      expect((await Agent.get("tutor"))?.name).toBe("teacher")
+      expect((await Agent.get("educator"))?.name).toBe("teacher")
+      expect((await Agent.get("brainstorm"))?.name).toBe("ideator")
+      expect((await Agent.get("cv-review"))?.name).toBe("career")
+      expect((await Agent.get("code-expert"))?.name).toBe("codeexpert")
+    },
+  })
+})
+
+test("Agent.resolve exposes deprecation metadata for legacy aliases", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const resolved = await Agent.resolve("socratic")
+      expect(resolved.agent?.name).toBe("teacher")
+      expect(resolved.canonical).toBe("teacher")
+      expect(resolved.deprecated?.from).toBe("socratic")
+      expect(resolved.deprecated?.to).toBe("teacher")
+      expect(resolved.deprecated?.message).toContain("deprecated")
+    },
+  })
+})
+
+test("specialist agents include manifest-driven profile metadata", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      for (const [name, profile] of Object.entries(AGENT_PROFILE_MANIFEST)) {
+        const agent = await Agent.get(name)
+        expect(agent).toBeDefined()
+        expect(agent?.options?.profile).toBeDefined()
+        expect(agent?.options?.profile?.defaultMode).toBe(profile.defaultMode)
+        expect(agent?.options?.profile?.capabilities).toEqual(profile.capabilities)
+        expect(agent?.options?.profile?.handoffs).toEqual(profile.handoffs)
+      }
     },
   })
 })

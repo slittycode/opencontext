@@ -1,15 +1,20 @@
-import { createMemo, Match, onCleanup, onMount, Show, Switch } from "solid-js"
+import { createMemo, For, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "../../context/theme"
 import { useSync } from "../../context/sync"
 import { useDirectory } from "../../context/directory"
 import { useConnected } from "../../component/dialog-model"
 import { createStore } from "solid-js/store"
 import { useRoute } from "../../context/route"
+import { useLocal } from "../../context/local"
+import { usePromptRef } from "../../context/prompt"
+import { HANDOFF_SEEDS, recommendHandoffs } from "./handoff"
 
 export function Footer() {
   const { theme } = useTheme()
   const sync = useSync()
   const route = useRoute()
+  const local = useLocal()
+  const promptRef = usePromptRef()
   const mcp = createMemo(() => Object.values(sync.data.mcp).filter((x) => x.status === "connected").length)
   const mcpError = createMemo(() => Object.values(sync.data.mcp).some((x) => x.status === "failed"))
   const lsp = createMemo(() => Object.keys(sync.data.lsp))
@@ -19,6 +24,56 @@ export function Footer() {
   })
   const directory = useDirectory()
   const connected = useConnected()
+  const sessionMessages = createMemo(() => {
+    if (route.data.type !== "session") return []
+    return sync.data.message[route.data.sessionID] ?? []
+  })
+  const lastAssistant = createMemo(() => sessionMessages().findLast((item) => item.role === "assistant"))
+  const lastAssistantText = createMemo(() => {
+    const last = lastAssistant()
+    if (!last) return ""
+    const parts = sync.data.part[last.id] ?? []
+    return parts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("\n")
+      .toLowerCase()
+      .slice(0, 3000)
+  })
+  const visiblePrimary = createMemo(
+    () =>
+      new Set(sync.data.agent.filter((agent) => agent.mode !== "subagent" && !agent.hidden).map((agent) => agent.name)),
+  )
+  const handoffSuggestions = createMemo(() => {
+    if (!connected()) return []
+    if (route.data.type !== "session") return []
+    if (sessionMessages().at(-1)?.role !== "assistant") return []
+
+    const active = local.agent.current()
+    const profile = local.agent.profile(active.name)
+    if (!profile?.handoffs?.length) return []
+
+    const text = lastAssistantText()
+    if (!text) return []
+    return recommendHandoffs({
+      activeAgent: active.name,
+      handoffs: profile.handoffs,
+      visiblePrimary: visiblePrimary(),
+      lastAssistantText: text,
+      max: 2,
+    })
+  })
+
+  function applyHandoff(target: string) {
+    local.agent.set(target)
+    const seed = HANDOFF_SEEDS[target]
+    if (!seed) return
+    promptRef.current?.set({
+      input: seed,
+      parts: [],
+    })
+    promptRef.current?.focus()
+  }
 
   const [store, setStore] = createStore({
     welcome: false,
@@ -81,6 +136,18 @@ export function Footer() {
                 </Switch>
                 {mcp()} MCP
               </text>
+            </Show>
+            <Show when={handoffSuggestions().length > 0}>
+              <box flexDirection="row" gap={1}>
+                <text fg={theme.textMuted}>handoff</text>
+                <For each={handoffSuggestions()}>
+                  {(target) => (
+                    <text fg={theme.text} onMouseUp={() => applyHandoff(target)}>
+                      [{target}]
+                    </text>
+                  )}
+                </For>
+              </box>
             </Show>
             <text fg={theme.textMuted}>/status</text>
           </Match>

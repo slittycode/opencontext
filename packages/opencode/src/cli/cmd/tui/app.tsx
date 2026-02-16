@@ -36,6 +36,7 @@ import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { writeHeapSnapshot } from "v8"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
+import { DialogSelect } from "./ui/dialog-select"
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -409,6 +410,18 @@ function App() {
       },
     },
     {
+      title: "Switch mode",
+      value: "agent.mode",
+      category: "Agent",
+      slash: {
+        name: "mode",
+      },
+      enabled: local.agent.mode.list(local.agent.current().name).length > 0,
+      onSelect: () => {
+        dialog.replace(() => <DialogMode />)
+      },
+    },
+    {
       title: "Toggle MCPs",
       value: "mcp.list",
       category: "Agent",
@@ -711,6 +724,33 @@ function App() {
         </Match>
       </Switch>
     </box>
+  )
+}
+
+function DialogMode() {
+  const local = useLocal()
+  const dialog = useDialog()
+
+  const currentAgent = () => local.agent.current()
+  const options = () =>
+    local.agent.mode.list(currentAgent().name).map((mode) => ({
+      value: mode.id,
+      title: mode.label,
+      description: mode.description,
+      category: currentAgent().name,
+      gutter: <text style={{ fg: local.agent.color(currentAgent().name) }}>●</text>,
+    }))
+
+  return (
+    <DialogSelect
+      title={`Select mode (${currentAgent().name})`}
+      current={local.agent.mode.current(currentAgent().name)?.id}
+      options={options()}
+      onSelect={(option) => {
+        local.agent.mode.set(option.value, currentAgent().name)
+        dialog.clear()
+      }}
+    />
   )
 }
 

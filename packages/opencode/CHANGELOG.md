@@ -32,3 +32,5 @@
 - Temperature tuning per role: researcher 0.2, teacher 0.4, ideator 0.8, career 0.3, codeexpert 0.2
 - Fixed permission/prompt misalignment — all `context_store` permissions now documented in prompts
 - No hyphens in agent display names
+- Added one-release compatibility bridge for legacy IDs (`research`, `socratic`, `brainstorm`, `cv-review`, `code-expert`, etc.) with canonical runtime resolution
+- `ideator` now defaults to `write: deny` (override with per-agent config if write access is required)

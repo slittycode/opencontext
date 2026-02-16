@@ -135,6 +135,19 @@ export namespace Session {
         error: MessageV2.Assistant.shape.error,
       }),
     ),
+    AgentOutcome: BusEvent.define(
+      "session.agent.outcome",
+      z.object({
+        sessionID: z.string(),
+        messageID: z.string(),
+        agent: z.string(),
+        mode: z.string().optional(),
+        fallbackUsed: z.boolean(),
+        retryCount: z.number().int().nonnegative(),
+        toolCount: z.number().int().nonnegative(),
+        completionReason: z.string().optional(),
+      }),
+    ),
   }
 
   export const create = fn(

@@ -46,6 +46,7 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
+import { resolveSessionAgent } from "./agent-resolution"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -53,6 +54,24 @@ globalThis.AI_SDK_LOG_WARNINGS = false
 export namespace SessionPrompt {
   const log = Log.create({ service: "session.prompt" })
   export const OUTPUT_TOKEN_MAX = Flag.OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX || 32_000
+  const DENY_ALL_RULESET = PermissionNext.fromConfig({ "*": "deny" })
+  const publishedResolutionWarnings = new Set<string>()
+
+  function publishResolutionWarningOnce(sessionID: string, context: string, message: string) {
+    const key = [sessionID, context, message].join(":")
+    if (publishedResolutionWarnings.has(key)) return
+    publishedResolutionWarnings.add(key)
+    Bus.publish(Session.Event.Error, {
+      sessionID,
+      error: new NamedError.Unknown({ message }).toObject(),
+    })
+  }
+
+  function selectedAgentMode(system?: string) {
+    if (!system) return undefined
+    const match = system.match(/^- Mode ID:\s*(.+)$/m)
+    return match?.[1]?.trim() || undefined
+  }
 
   const state = Instance.state(
     () => {
@@ -327,6 +346,18 @@ export namespace SessionPrompt {
       // pending subtask
       // TODO: centralize "invoke tool" logic
       if (task?.type === "subtask") {
+        const taskResolution = await resolveSessionAgent({
+          requested: task.agent,
+          context: "subtask",
+          mode: "none",
+          sessionID,
+        })
+        const taskAgent = taskResolution.agent
+        const taskAgentName = taskAgent?.name ?? task.agent
+        if (!taskAgent && taskResolution.message) {
+          publishResolutionWarningOnce(sessionID, "subtask", taskResolution.message)
+        }
+
         const taskTool = await TaskTool.init()
         const taskModel = task.model ? await Provider.getModel(task.model.providerID, task.model.modelID) : model
         const assistantMessage = (await Session.updateMessage({
@@ -334,8 +365,8 @@ export namespace SessionPrompt {
           role: "assistant",
           parentID: lastUser.id,
           sessionID,
-          mode: task.agent,
-          agent: task.agent,
+          mode: taskAgentName,
+          agent: taskAgentName,
           variant: lastUser.variant,
           path: {
             cwd: Instance.directory,
@@ -366,7 +397,7 @@ export namespace SessionPrompt {
             input: {
               prompt: task.prompt,
               description: task.description,
-              subagent_type: task.agent,
+              subagent_type: taskAgentName,
               command: task.command,
             },
             time: {
@@ -377,7 +408,7 @@ export namespace SessionPrompt {
         const taskArgs = {
           prompt: task.prompt,
           description: task.description,
-          subagent_type: task.agent,
+          subagent_type: taskAgentName,
           command: task.command,
         }
         await Plugin.trigger(
@@ -390,9 +421,8 @@ export namespace SessionPrompt {
           { args: taskArgs },
         )
         let executionError: Error | undefined
-        const taskAgent = await Agent.get(task.agent)
         const taskCtx: Tool.Context = {
-          agent: task.agent,
+          agent: taskAgentName,
           messageID: assistantMessage.id,
           sessionID: sessionID,
           abort,
@@ -413,13 +443,13 @@ export namespace SessionPrompt {
             await PermissionNext.ask({
               ...req,
               sessionID: sessionID,
-              ruleset: PermissionNext.merge(taskAgent.permission, session.permission ?? []),
+              ruleset: PermissionNext.merge(taskAgent?.permission ?? DENY_ALL_RULESET, session.permission ?? []),
             })
           },
         }
         const result = await taskTool.execute(taskArgs, taskCtx).catch((error) => {
           executionError = error
-          log.error("subtask execution failed", { error, agent: task.agent, description: task.description })
+          log.error("subtask execution failed", { error, agent: taskAgentName, description: task.description })
           return undefined
         })
         await Plugin.trigger(
@@ -524,7 +554,21 @@ export namespace SessionPrompt {
       }
 
       // normal processing
-      const agent = await Agent.get(lastUser.agent)
+      const agentResolution = await resolveSessionAgent({
+        requested: lastUser.agent,
+        context: "loop",
+        mode: "default",
+        sessionID,
+      })
+      if (agentResolution.message) {
+        publishResolutionWarningOnce(sessionID, "loop", agentResolution.message)
+      }
+      const agent = agentResolution.agent
+      if (!agent) {
+        throw new NamedError.Unknown({
+          message: `Failed to resolve agent for session loop: "${lastUser.agent}"`,
+        })
+      }
       const maxSteps = agent.steps ?? Infinity
       const isLastStep = step >= maxSteps
       msgs = await insertReminders({
@@ -629,6 +673,19 @@ export namespace SessionPrompt {
         tools,
         model,
       })
+
+      const outcomeParts = await MessageV2.parts(processor.message.id)
+      Bus.publish(Session.Event.AgentOutcome, {
+        sessionID,
+        messageID: processor.message.id,
+        agent: agent.name,
+        mode: selectedAgentMode(lastUser.system),
+        fallbackUsed: agentResolution.fallbackUsed,
+        retryCount: outcomeParts.filter((part) => part.type === "retry").length,
+        toolCount: outcomeParts.filter((part) => part.type === "tool").length,
+        completionReason: processor.message.finish,
+      })
+
       if (result === "stop") break
       if (result === "compact") {
         await SessionCompaction.create({
@@ -840,7 +897,18 @@ export namespace SessionPrompt {
   }
 
   async function createUserMessage(input: PromptInput) {
-    const agent = await Agent.get(input.agent ?? (await Agent.defaultAgent()))
+    const agentResolution = await resolveSessionAgent({
+      requested: input.agent,
+      context: "prompt",
+      mode: "error",
+      sessionID: input.sessionID,
+    })
+    const agent = agentResolution.agent
+    if (!agent) {
+      throw new NamedError.Unknown({
+        message: `Failed to resolve agent for prompt: "${input.agent ?? "(default)"}"`,
+      })
+    }
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const variant =
@@ -1039,7 +1107,7 @@ export namespace SessionPrompt {
                     const readCtx: Tool.Context = {
                       sessionID: input.sessionID,
                       abort: new AbortController().signal,
-                      agent: input.agent!,
+                      agent: agent.name,
                       messageID: info.id,
                       extra: { bypassCwdCheck: true, model },
                       messages: [],
@@ -1101,7 +1169,7 @@ export namespace SessionPrompt {
                 const listCtx: Tool.Context = {
                   sessionID: input.sessionID,
                   abort: new AbortController().signal,
-                  agent: input.agent!,
+                  agent: agent.name,
                   messageID: info.id,
                   extra: { bypassCwdCheck: true },
                   messages: [],
@@ -1202,7 +1270,7 @@ export namespace SessionPrompt {
       "chat.message",
       {
         sessionID: input.sessionID,
-        agent: input.agent,
+        agent: agent.name,
         model: input.model,
         messageID: input.messageID,
         variant: input.variant,
@@ -1399,7 +1467,16 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     if (session.revert) {
       await SessionRevert.cleanup(session)
     }
-    const agent = await Agent.get(input.agent)
+    const agentResolution = await resolveSessionAgent({
+      requested: input.agent,
+      context: "shell",
+      mode: "error",
+      sessionID: input.sessionID,
+    })
+    const agent = agentResolution.agent
+    if (!agent) {
+      throw new NamedError.Unknown({ message: `Agent not found: "${input.agent}".` })
+    }
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const userMsg: MessageV2.User = {
       id: Identifier.ascending("message"),
@@ -1408,7 +1485,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         created: Date.now(),
       },
       role: "user",
-      agent: input.agent,
+      agent: agent.name,
       model: {
         providerID: model.providerID,
         modelID: model.modelID,
@@ -1429,8 +1506,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       id: Identifier.ascending("message"),
       sessionID: input.sessionID,
       parentID: userMsg.id,
-      mode: input.agent,
-      agent: input.agent,
+      mode: agent.name,
+      agent: agent.name,
       cost: 0,
       path: {
         cwd: Instance.directory,
@@ -1720,16 +1797,15 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       }
       throw e
     }
-    const agent = await Agent.get(agentName)
+    const agentResolution = await resolveSessionAgent({
+      requested: agentName,
+      context: "command",
+      mode: "error",
+      sessionID: input.sessionID,
+    })
+    const agent = agentResolution.agent
     if (!agent) {
-      const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
-      const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
-      const error = new NamedError.Unknown({ message: `Agent not found: "${agentName}".${hint}` })
-      Bus.publish(Session.Event.Error, {
-        sessionID: input.sessionID,
-        error: error.toObject(),
-      })
-      throw error
+      throw new NamedError.Unknown({ message: `Agent not found: "${agentName}".` })
     }
 
     const templateParts = await resolvePromptParts(template)
@@ -1751,7 +1827,16 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         ]
       : [...templateParts, ...(input.parts ?? [])]
 
-    const userAgent = isSubtask ? (input.agent ?? (await Agent.defaultAgent())) : agentName
+    const userAgent = isSubtask
+      ? (
+          await resolveSessionAgent({
+            requested: input.agent ?? (await Agent.defaultAgent()),
+            context: "command",
+            mode: "error",
+            sessionID: input.sessionID,
+          })
+        ).agent?.name ?? (await Agent.defaultAgent())
+      : agent.name
     const userModel = isSubtask
       ? input.model
         ? Provider.parseModel(input.model)
