@@ -173,6 +173,18 @@ describe("ProviderTransform.options - gpt-5 textVerbosity", () => {
     const result = ProviderTransform.options({ model, sessionID, providerOptions: {} })
     expect(result.textVerbosity).toBeUndefined()
   })
+
+  test("gpt-5.2 should default reasoningEffort to medium", () => {
+    const model = createGpt5Model("gpt-5.2")
+    const result = ProviderTransform.options({ model, sessionID, providerOptions: {} })
+    expect(result.reasoningEffort).toBe("medium")
+  })
+
+  test("gpt-5.3-codex should default reasoningEffort to low", () => {
+    const model = createGpt5Model("gpt-5.3-codex")
+    const result = ProviderTransform.options({ model, sessionID, providerOptions: {} })
+    expect(result.reasoningEffort).toBe("low")
+  })
 })
 
 describe("ProviderTransform.maxOutputTokens", () => {
