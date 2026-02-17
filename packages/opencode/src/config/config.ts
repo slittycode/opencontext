@@ -32,6 +32,7 @@ import { PackageRegistry } from "@/bun/registry"
 import { proxied } from "@/util/proxied"
 import { iife } from "@/util/iife"
 import { canonicalizeAgentName } from "@/agent/legacy-agents"
+import { Project } from "@/project/project"
 
 export namespace Config {
   const CONFIG_SCHEMA_URL = "https://opencode.ai/config.json"
@@ -66,6 +67,28 @@ export namespace Config {
       merged.instructions = Array.from(new Set([...target.instructions, ...source.instructions]))
     }
     return merged
+  }
+
+  const UNTRUSTED_PROJECT_EXECUTION_FIELDS = ["plugin", "mcp", "formatter", "lsp"] as const
+
+  function sanitizeProjectConfigForTrust(input: { config: Info; trusted: boolean; sourcePath: string }): Info {
+    if (input.trusted) return input.config
+
+    const blocked = UNTRUSTED_PROJECT_EXECUTION_FIELDS.filter((key) => input.config[key] !== undefined)
+    if (!blocked.length) return input.config
+
+    const sanitized: Info = { ...input.config }
+    for (const key of blocked) {
+      delete sanitized[key]
+    }
+
+    log.warn("ignoring execution-capable fields from untrusted project config", {
+      path: input.sourcePath,
+      fields: blocked,
+      command: "opencontext trust enable",
+    })
+
+    return sanitized
   }
 
   export const state = Instance.state(async () => {
@@ -109,12 +132,22 @@ export namespace Config {
       log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
     }
 
+    const projectConfigTrusted = Project.isProjectConfigTrusted(Instance.project)
+
     // Project config overrides global and remote config.
     if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
       for (const file of PROJECT_CONFIG_FILES) {
         const found = await Filesystem.findUp(file, Instance.directory, Instance.worktree)
         for (const resolved of found.toReversed()) {
-          result = mergeConfigConcatArrays(result, await loadFile(resolved))
+          const loaded = await loadFile(resolved)
+          result = mergeConfigConcatArrays(
+            result,
+            sanitizeProjectConfigForTrust({
+              config: loaded,
+              trusted: projectConfigTrusted,
+              sourcePath: resolved,
+            }),
+          )
         }
       }
     }
@@ -123,26 +156,35 @@ export namespace Config {
     result.mode = result.mode || {}
     result.plugin = result.plugin || []
 
+    const projectContextDirectories = !Flag.OPENCODE_DISABLE_PROJECT_CONFIG
+      ? await Array.fromAsync(
+          Filesystem.up({
+            targets: CONTEXT_DIR_NAMES as unknown as string[],
+            start: Instance.directory,
+            stop: Instance.worktree,
+          }),
+        )
+      : []
+
+    if (!projectConfigTrusted && projectContextDirectories.length > 0) {
+      log.warn("workspace-local extension directories are disabled until trusted", {
+        worktree: Instance.worktree,
+        command: "opencontext trust enable",
+      })
+    }
+
+    const homeContextDirectories = await Array.fromAsync(
+      Filesystem.up({
+        targets: CONTEXT_DIR_NAMES as unknown as string[],
+        start: Global.Path.home,
+        stop: Global.Path.home,
+      }),
+    )
+
     const directories = [
       Global.Path.config,
-      // Only scan project context directories when project discovery is enabled
-      ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
-        ? await Array.fromAsync(
-            Filesystem.up({
-              targets: CONTEXT_DIR_NAMES as unknown as string[],
-              start: Instance.directory,
-              stop: Instance.worktree,
-            }),
-          )
-        : []),
-      // Always scan context directories in user home
-      ...(await Array.fromAsync(
-        Filesystem.up({
-          targets: CONTEXT_DIR_NAMES as unknown as string[],
-          start: Global.Path.home,
-          stop: Global.Path.home,
-        }),
-      )),
+      ...(projectConfigTrusted ? projectContextDirectories : []),
+      ...homeContextDirectories,
     ]
 
     // Context directory config overrides (project and global) config sources.
@@ -154,11 +196,7 @@ export namespace Config {
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (
-        dir.endsWith(".opencontext") ||
-        dir.endsWith(".opencode") ||
-        dir === Flag.OPENCODE_CONFIG_DIR
-      ) {
+      if (dir.endsWith(".opencontext") || dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
         for (const file of PROJECT_CONFIG_FILES) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
@@ -871,6 +909,7 @@ export namespace Config {
       agent_cycle: z.string().optional().default("tab").describe("Next agent"),
       agent_cycle_reverse: z.string().optional().default("shift+tab").describe("Previous agent"),
       variant_cycle: z.string().optional().default("ctrl+t").describe("Cycle model variants"),
+      mode_cycle: z.string().optional().default("ctrl+m").describe("Cycle agent modes"),
       input_clear: z.string().optional().default("ctrl+c").describe("Clear input field"),
       input_paste: z.string().optional().default("ctrl+v").describe("Paste from clipboard"),
       input_submit: z.string().optional().default("return").describe("Submit input"),
@@ -1422,8 +1461,8 @@ export namespace Config {
   }
 
   function globalConfigFile() {
-    const candidates = ["opencontext.jsonc", "opencontext.json", "opencode.jsonc", "opencode.json", "config.json"].map((file) =>
-      path.join(Global.Path.config, file),
+    const candidates = ["opencontext.jsonc", "opencontext.json", "opencode.jsonc", "opencode.json", "config.json"].map(
+      (file) => path.join(Global.Path.config, file),
     )
     for (const file of candidates) {
       if (existsSync(file)) return file

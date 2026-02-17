@@ -19,9 +19,6 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
-
       - name: Triage issue
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -30,7 +27,7 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          opencode run --agent triage "The following issue was just opened, triage it:
+          bun run --cwd packages/opencode --conditions=browser src/index.ts run --agent triage "The following issue was just opened, triage it:
 
           Title: $ISSUE_TITLE
 

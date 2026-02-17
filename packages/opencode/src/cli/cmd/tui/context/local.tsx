@@ -186,6 +186,24 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
             setAgentStore("mode", name, value)
             saveModes()
           },
+          cycle(name = agentStore.current) {
+            const options = modeList(name)
+            if (!options.length) return
+            const current = normalizedMode(name)
+            if (!current) {
+              setAgentStore("mode", name, options[0]?.id)
+              saveModes()
+              return
+            }
+            const index = options.findIndex((x) => x.id === current.id)
+            if (index === -1 || index === options.length - 1) {
+              setAgentStore("mode", name, options[0]?.id)
+              saveModes()
+              return
+            }
+            setAgentStore("mode", name, options[index + 1]?.id)
+            saveModes()
+          },
         },
       }
     })

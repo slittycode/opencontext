@@ -54,6 +54,29 @@ export namespace Server {
     return _url ?? new URL("http://localhost:4096")
   }
 
+  export function isLoopbackHostname(hostname: string) {
+    const normalized = hostname.trim().toLowerCase()
+    if (!normalized) return false
+    if (normalized === "localhost") return true
+    if (normalized === "::1" || normalized === "[::1]") return true
+    return normalized.startsWith("127.")
+  }
+
+  export function assertSecureServerConfig(hostname: string) {
+    if (Flag.OPENCODE_SERVER_PASSWORD) return
+    if (isLoopbackHostname(hostname)) return
+    if (Flag.OPENCODE_SERVER_ALLOW_INSECURE) {
+      log.warn("starting server without auth on a non-loopback host", {
+        hostname,
+      })
+      return
+    }
+    throw new Error(
+      `OPENCODE_SERVER_PASSWORD is required when binding to ${hostname}. ` +
+        `Set OPENCODE_SERVER_ALLOW_INSECURE=1 to override (not recommended).`,
+    )
+  }
+
   const app = new Hono()
   export const App: () => Hono = lazy(
     () =>
@@ -72,8 +95,7 @@ export namespace Server {
             return c.json(err.toObject(), { status })
           }
           if (err instanceof HTTPException) return err.getResponse()
-          const message = err instanceof Error && err.stack ? err.stack : err.toString()
-          return c.json(new NamedError.Unknown({ message }).toObject(), {
+          return c.json(new NamedError.Unknown({ message: "Internal server error" }).toObject(), {
             status: 500,
           })
         })
@@ -581,6 +603,7 @@ export namespace Server {
     mdnsDomain?: string
     cors?: string[]
   }) {
+    assertSecureServerConfig(opts.hostname)
     _corsWhitelist = opts.cors ?? []
 
     const args = {
@@ -601,12 +624,7 @@ export namespace Server {
 
     _url = server.url
 
-    const shouldPublishMDNS =
-      opts.mdns &&
-      server.port &&
-      opts.hostname !== "127.0.0.1" &&
-      opts.hostname !== "localhost" &&
-      opts.hostname !== "::1"
+    const shouldPublishMDNS = opts.mdns && server.port && !isLoopbackHostname(opts.hostname)
     if (shouldPublishMDNS) {
       MDNS.publish(server.port!, opts.mdnsDomain)
     } else if (opts.mdns) {

@@ -29,6 +29,38 @@ export function contextManifestPath(directory = Instance.directory): string {
   return path.join(contextDir(directory), "manifest.json")
 }
 
+function normalizeCategory(input?: string): string {
+  if (!input) return "general"
+  const segments = input
+    .split(/[\\/]+/)
+    .map((segment) => toKebabCase(segment))
+    .filter(Boolean)
+  return segments.length > 0 ? segments.join("/") : "general"
+}
+
+function sanitizeEntryPath(input: string): string {
+  return input
+    .trim()
+    .replace(/^\.context(?:[\\/]|$)/, "")
+    .replace(/^[\\/]+/, "")
+}
+
+function resolveContextEntryPath(directory: string, entryPath: string): { cleanPath: string; fullPath: string } {
+  const root = path.resolve(contextDir(directory))
+  const sanitized = sanitizeEntryPath(entryPath)
+  if (!sanitized || sanitized === ".") {
+    throw new Error("Context entry path is empty")
+  }
+
+  const fullPath = path.resolve(root, sanitized)
+  if (fullPath === root || !fullPath.startsWith(root + path.sep)) {
+    throw new Error("Context entry path escapes .context directory")
+  }
+
+  const cleanPath = path.relative(root, fullPath).split(path.sep).join("/")
+  return { cleanPath, fullPath }
+}
+
 export async function readContextManifest(directory = Instance.directory): Promise<ContextManifest> {
   try {
     const raw = await Bun.file(contextManifestPath(directory)).text()
@@ -61,10 +93,10 @@ export async function saveContextEntry(input: {
   directory?: string
 }) {
   const directory = input.directory ?? Instance.directory
-  const category = input.category ?? "general"
+  const category = normalizeCategory(input.category)
   const filename = toKebabCase(input.title) + ".md"
   const relativePath = path.join(category, filename)
-  const fullPath = path.join(contextDir(directory), relativePath)
+  const { cleanPath, fullPath } = resolveContextEntryPath(directory, relativePath)
 
   await fs.mkdir(path.dirname(fullPath), { recursive: true })
 
@@ -84,9 +116,9 @@ export async function saveContextEntry(input: {
   await Bun.write(fullPath, frontmatter + input.content)
 
   const manifest = await readContextManifest(directory)
-  const existingIdx = manifest.entries.findIndex((entry) => entry.path === relativePath)
+  const existingIdx = manifest.entries.findIndex((entry) => entry.path === cleanPath)
   const entry: ContextManifestEntry = {
-    path: relativePath,
+    path: cleanPath,
     title: input.title,
     category,
     tags: input.tags ?? [],
@@ -130,7 +162,7 @@ export async function searchContextEntries(input: { query: string; category?: st
     if (metadataMatches.includes(entry)) continue
     if (input.category && entry.category !== input.category) continue
     try {
-      const fullPath = path.join(contextDir(directory), entry.path)
+      const { fullPath } = resolveContextEntryPath(directory, entry.path)
       const content = await Bun.file(fullPath).text()
       if (content.toLowerCase().includes(query)) contentMatches.push(entry)
     } catch {
@@ -143,8 +175,7 @@ export async function searchContextEntries(input: { query: string; category?: st
 
 export async function readContextEntry(input: { entryPath: string; directory?: string }) {
   const directory = input.directory ?? Instance.directory
-  const cleanPath = input.entryPath.replace(/^\.context\//, "")
-  const fullPath = path.join(contextDir(directory), cleanPath)
+  const { cleanPath, fullPath } = resolveContextEntryPath(directory, input.entryPath)
 
   const content = await Bun.file(fullPath).text()
   return {
@@ -155,8 +186,7 @@ export async function readContextEntry(input: { entryPath: string; directory?: s
 
 export async function deleteContextEntry(input: { entryPath: string; directory?: string }) {
   const directory = input.directory ?? Instance.directory
-  const cleanPath = input.entryPath.replace(/^\.context\//, "")
-  const fullPath = path.join(contextDir(directory), cleanPath)
+  const { cleanPath, fullPath } = resolveContextEntryPath(directory, input.entryPath)
 
   await fs.unlink(fullPath)
   const manifest = await readContextManifest(directory)

@@ -31,9 +31,6 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
-
       - name: Get PR details
         id: pr-details
         run: |
@@ -51,7 +48,7 @@ jobs:
           PR_TITLE: ${{ steps.pr-details.outputs.title }}
         run: |
           PR_BODY=$(jq -r .body pr_data.json)
-          opencode run -m anthropic/claude-opus-4-5 "A new pull request has been created: '${PR_TITLE}'
+          bun run --cwd packages/opencode --conditions=browser src/index.ts run -m anthropic/claude-opus-4-5 "A new pull request has been created: '${PR_TITLE}'
 
           <pr-number>
           ${{ steps.pr-number.outputs.number }}

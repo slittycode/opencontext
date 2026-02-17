@@ -39,6 +39,14 @@ export namespace Project {
           start: z.string().optional().describe("Startup script to run when creating a new workspace (worktree)"),
         })
         .optional(),
+      trust: z
+        .object({
+          projectConfig: z
+            .boolean()
+            .optional()
+            .describe("Whether project-local .opencontext/.opencode extensions are trusted"),
+        })
+        .optional(),
       time: z.object({
         created: z.number(),
         updated: z.number(),
@@ -331,6 +339,28 @@ export namespace Project {
     })
   }
 
+  export function isProjectConfigTrusted(project: Pick<Info, "trust">): boolean {
+    if (Flag.OPENCODE_TRUST_PROJECT) return true
+    return project.trust?.projectConfig === true
+  }
+
+  export async function setProjectConfigTrust(projectID: string, trusted: boolean) {
+    const result = await Storage.update<Info>(["project", projectID], (draft) => {
+      draft.trust = {
+        ...(draft.trust ?? {}),
+        projectConfig: trusted,
+      }
+      draft.time.updated = Date.now()
+    })
+    GlobalBus.emit("event", {
+      payload: {
+        type: Event.Updated.type,
+        properties: result,
+      },
+    })
+    return result
+  }
+
   export async function list() {
     const keys = await Storage.list(["project"])
     const projects = await Promise.all(keys.map((x) => Storage.read<Info>(x)))
@@ -346,6 +376,7 @@ export namespace Project {
       name: z.string().optional(),
       icon: Info.shape.icon.optional(),
       commands: Info.shape.commands.optional(),
+      trust: Info.shape.trust.optional(),
     }),
     async (input) => {
       const result = await Storage.update<Info>(["project", input.projectID], (draft) => {
@@ -366,6 +397,13 @@ export namespace Project {
           }
           draft.commands.start = start
           if (!draft.commands.start) draft.commands = undefined
+        }
+
+        if (input.trust?.projectConfig !== undefined) {
+          draft.trust = {
+            ...(draft.trust ?? {}),
+            projectConfig: input.trust.projectConfig,
+          }
         }
 
         draft.time.updated = Date.now()

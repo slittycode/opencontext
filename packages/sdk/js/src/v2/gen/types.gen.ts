@@ -1131,6 +1131,10 @@ export type KeybindsConfig = {
    */
   variant_cycle?: string
   /**
+   * Cycle agent modes
+   */
+  mode_cycle?: string
+  /**
    * Clear input field
    */
   input_clear?: string

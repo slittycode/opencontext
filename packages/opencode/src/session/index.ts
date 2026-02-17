@@ -365,25 +365,21 @@ export namespace Session {
 
   export const remove = fn(Identifier.schema("session"), async (sessionID) => {
     const project = Instance.project
-    try {
-      const session = await get(sessionID)
-      for (const child of await children(sessionID)) {
-        await remove(child.id)
-      }
-      await unshare(sessionID).catch(() => {})
-      for (const msg of await Storage.list(["message", sessionID])) {
-        for (const part of await Storage.list(["part", msg.at(-1)!])) {
-          await Storage.remove(part)
-        }
-        await Storage.remove(msg)
-      }
-      await Storage.remove(["session", project.id, sessionID])
-      Bus.publish(Event.Deleted, {
-        info: session,
-      })
-    } catch (e) {
-      log.error(e)
+    const session = await get(sessionID)
+    for (const child of await children(sessionID)) {
+      await remove(child.id)
     }
+    await unshare(sessionID).catch(() => {})
+    for (const msg of await Storage.list(["message", sessionID])) {
+      for (const part of await Storage.list(["part", msg.at(-1)!])) {
+        await Storage.remove(part)
+      }
+      await Storage.remove(msg)
+    }
+    await Storage.remove(["session", project.id, sessionID])
+    Bus.publish(Event.Deleted, {
+      info: session,
+    })
   })
 
   export const updateMessage = fn(MessageV2.Info, async (msg) => {

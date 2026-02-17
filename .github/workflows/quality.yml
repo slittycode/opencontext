@@ -1,0 +1,74 @@
+name: quality
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint workflow and action YAML
+        run: |
+          ruby -e 'require "yaml"; (Dir[".github/workflows/*.yml"] + Dir[".github/actions/**/*.yml"]).each { |f| YAML.load_file(f) }'
+
+  format:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Check formatting
+        run: bun run prettier --ignore-unknown --check .
+
+  security:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enforce workflow security policy
+        run: |
+          set -euo pipefail
+
+          if rg -n "curl -fsSL https://opencode\\.ai/install \\| bash" .github/workflows; then
+            echo "Disallowed installer pattern found in workflows"
+            exit 1
+          fi
+
+          if rg -n "uses:\\s+[^\\n]*@latest" .github/workflows; then
+            echo "Unpinned @latest GitHub Action reference found"
+            exit 1
+          fi
+
+          if rg -n "github\\.repository\\s*==\\s*'(anomalyco/opencode|sst/opencode)'" .github/workflows; then
+            echo "Stale repository guard found in workflows"
+            exit 1
+          fi
+
+  required:
+    name: quality
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs:
+      - lint
+      - format
+      - security
+    if: always()
+    steps:
+      - name: Verify quality jobs passed
+        run: |
+          echo "lint=${{ needs.lint.result }}"
+          echo "format=${{ needs.format.result }}"
+          echo "security=${{ needs.security.result }}"
+          test "${{ needs.lint.result }}" = "success"
+          test "${{ needs.format.result }}" = "success"
+          test "${{ needs.security.result }}" = "success"

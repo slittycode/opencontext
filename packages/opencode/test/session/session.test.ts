@@ -68,4 +68,15 @@ describe("session.started event", () => {
       },
     })
   })
+
+  test("Session.remove should surface not found errors", async () => {
+    await Instance.provide({
+      directory: projectRoot,
+      fn: async () => {
+        await expect(Session.remove("ses_missing")).rejects.toMatchObject({
+          name: "NotFoundError",
+        })
+      },
+    })
+  })
 })

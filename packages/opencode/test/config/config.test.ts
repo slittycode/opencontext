@@ -1,6 +1,8 @@
 import { test, expect, describe, mock, afterEach } from "bun:test"
+import { afterAll, beforeEach } from "bun:test"
 import { Config } from "../../src/config/config"
 import { Instance } from "../../src/project/instance"
+import { Project } from "../../src/project/project"
 import { Auth } from "../../src/auth"
 import { tmpdir } from "../fixture/fixture"
 import path from "path"
@@ -10,6 +12,16 @@ import { Global } from "../../src/global"
 
 // Get managed config directory from environment (set in preload.ts)
 const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!
+const originalTrustProject = process.env.OPENCODE_TRUST_PROJECT
+
+beforeEach(() => {
+  process.env.OPENCODE_TRUST_PROJECT = "1"
+})
+
+afterAll(() => {
+  if (originalTrustProject === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+  else process.env.OPENCODE_TRUST_PROJECT = originalTrustProject
+})
 
 afterEach(async () => {
   await fs.rm(managedConfigDir, { force: true, recursive: true }).catch(() => {})
@@ -44,6 +56,17 @@ test("loads config with defaults when no files exist", async () => {
     fn: async () => {
       const config = await Config.get()
       expect(config.username).toBeDefined()
+    },
+  })
+})
+
+test("includes mode_cycle keybind default", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await Config.get()
+      expect(config.keybinds?.mode_cycle).toBe("ctrl+m")
     },
   })
 })
@@ -478,7 +501,85 @@ test("migrates legacy agent config keys to canonical IDs", async () => {
   })
 })
 
-test("loads config from .opencode directory", async () => {
+test("does not load .opencode directory extensions when workspace is untrusted", async () => {
+  const previousTrust = process.env.OPENCODE_TRUST_PROJECT
+  delete process.env.OPENCODE_TRUST_PROJECT
+
+  try {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        const opencodeDir = path.join(dir, ".opencode")
+        await fs.mkdir(opencodeDir, { recursive: true })
+        const agentDir = path.join(opencodeDir, "agent")
+        await fs.mkdir(agentDir, { recursive: true })
+
+        await Bun.write(
+          path.join(agentDir, "test.md"),
+          `---
+model: test/model
+---
+Test agent prompt`,
+        )
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.agent?.["test"]).toBeUndefined()
+      },
+    })
+  } finally {
+    if (previousTrust === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+    else process.env.OPENCODE_TRUST_PROJECT = previousTrust
+  }
+})
+
+test("ignores execution-capable fields in untrusted project config files", async () => {
+  const previousTrust = process.env.OPENCODE_TRUST_PROJECT
+  delete process.env.OPENCODE_TRUST_PROJECT
+
+  try {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(
+          path.join(dir, "opencontext.json"),
+          JSON.stringify({
+            $schema: "https://opencontext.ai/config.json",
+            theme: "matrix",
+            plugin: ["evil-plugin"],
+            mcp: {
+              docs: {
+                type: "remote",
+                url: "https://docs.example.com/mcp",
+                enabled: true,
+              },
+            },
+            formatter: false,
+            lsp: false,
+          }),
+        )
+      },
+    })
+
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.theme).toBe("matrix")
+        expect(config.plugin?.some((entry) => entry.includes("evil-plugin"))).toBe(false)
+        expect(config.mcp?.docs).toBeUndefined()
+        expect(config.formatter).toBeUndefined()
+        expect(config.lsp).toBeUndefined()
+      },
+    })
+  } finally {
+    if (previousTrust === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+    else process.env.OPENCODE_TRUST_PROJECT = previousTrust
+  }
+})
+
+test("loads config from .opencode directory when workspace is trusted", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
@@ -498,6 +599,7 @@ Test agent prompt`,
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
+      await Project.setProjectConfigTrust(Instance.project.id, true)
       const config = await Config.get()
       expect(config.agent?.["test"]).toEqual(
         expect.objectContaining({
@@ -510,7 +612,7 @@ Test agent prompt`,
   })
 })
 
-test("loads agents from .opencode/agents (plural)", async () => {
+test("loads agents from .opencode/agents (plural) when workspace is trusted", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
@@ -542,6 +644,7 @@ Nested agent prompt`,
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
+      await Project.setProjectConfigTrust(Instance.project.id, true)
       const config = await Config.get()
 
       expect(config.agent?.["helper"]).toMatchObject({
@@ -561,7 +664,7 @@ Nested agent prompt`,
   })
 })
 
-test("loads commands from .opencode/command (singular)", async () => {
+test("loads commands from .opencode/command (singular) when workspace is trusted", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
@@ -591,6 +694,7 @@ Nested command template`,
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
+      await Project.setProjectConfigTrust(Instance.project.id, true)
       const config = await Config.get()
 
       expect(config.command?.["hello"]).toEqual({
@@ -606,7 +710,7 @@ Nested command template`,
   })
 })
 
-test("loads commands from .opencode/commands (plural)", async () => {
+test("loads commands from .opencode/commands (plural) when workspace is trusted", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const opencodeDir = path.join(dir, ".opencode")
@@ -636,6 +740,7 @@ Nested command template`,
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
+      await Project.setProjectConfigTrust(Instance.project.id, true)
       const config = await Config.get()
 
       expect(config.command?.["hello"]).toEqual({
@@ -709,9 +814,7 @@ test("does not try to install dependencies in read-only OPENCODE_CONFIG_DIR", as
   }
 })
 
-test(
-  "installs dependencies in writable OPENCODE_CONFIG_DIR",
-  async () => {
+test("installs dependencies in writable OPENCODE_CONFIG_DIR", async () => {
   await using tmp = await tmpdir<string>({
     init: async (dir) => {
       const cfg = path.join(dir, "configdir")
@@ -738,9 +841,7 @@ test(
     if (prev === undefined) delete process.env.OPENCODE_CONFIG_DIR
     else process.env.OPENCODE_CONFIG_DIR = prev
   }
-  },
-  20000,
-)
+}, 20000)
 
 test("resolves scoped npm plugins in config", async () => {
   await using tmp = await tmpdir({

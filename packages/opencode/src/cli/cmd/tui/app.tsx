@@ -199,6 +199,53 @@ function App() {
   const sync = useSync()
   const exit = useExit()
   const promptRef = usePromptRef()
+  const [trustWarningShown, setTrustWarningShown] = createSignal(false)
+
+  const needsWorkspaceTrust = () => {
+    const trust = sync.data.workspace_trust
+    return !!trust && trust.hasLocalExtensions && !trust.trusted
+  }
+
+  async function enableWorkspaceTrust() {
+    const trust = sync.data.workspace_trust
+    if (!trust) {
+      toast.show({
+        variant: "warning",
+        message: "Workspace trust state is still loading. Try again in a moment.",
+        duration: 4000,
+      })
+      return
+    }
+    if (trust.trusted) {
+      toast.show({
+        variant: "info",
+        message: "Workspace extensions are already trusted.",
+        duration: 3000,
+      })
+      return
+    }
+
+    const response = await sdk.request(`/project/${encodeURIComponent(trust.projectID)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ trust: { projectConfig: true } }),
+    })
+
+    if (!response.ok) {
+      const reason = await response.text().catch(() => "")
+      throw new Error(reason || `Failed to trust workspace (${response.status})`)
+    }
+
+    toast.show({
+      variant: "info",
+      title: "Workspace trusted",
+      message: "Reloading project configuration to enable local extensions...",
+      duration: 5000,
+    })
+    await sdk.client.instance.dispose().catch(() => undefined)
+  }
 
   // Wire up console copy-to-clipboard via opentui's onCopySelection callback
   renderer.console.onCopySelection = async (text: string) => {
@@ -453,6 +500,17 @@ function App() {
       },
     },
     {
+      title: "Mode cycle",
+      value: "agent.mode.cycle",
+      keybind: "mode_cycle",
+      category: "Agent",
+      hidden: true,
+      enabled: local.agent.mode.list(local.agent.current().name).length > 0,
+      onSelect: () => {
+        local.agent.mode.cycle(local.agent.current().name)
+      },
+    },
+    {
       title: "Agent cycle reverse",
       value: "agent.cycle.reverse",
       keybind: "agent_cycle_reverse",
@@ -483,6 +541,19 @@ function App() {
       },
       onSelect: () => {
         dialog.replace(() => <DialogStatus />)
+      },
+      category: "System",
+    },
+    {
+      title: "Trust workspace extensions",
+      value: "workspace.trust.enable",
+      slash: {
+        name: "trust",
+      },
+      suggested: needsWorkspaceTrust(),
+      hidden: !needsWorkspaceTrust(),
+      onSelect: (dialog) => {
+        void enableWorkspaceTrust().finally(() => dialog.clear())
       },
       category: "System",
     },
@@ -633,6 +704,18 @@ function App() {
         ).then(() => kv.set("openrouter_warning", true))
       })
     }
+  })
+
+  createEffect(() => {
+    if (trustWarningShown()) return
+    if (!needsWorkspaceTrust()) return
+    setTrustWarningShown(true)
+    toast.show({
+      variant: "warning",
+      title: "Workspace extensions disabled",
+      message: "Detected .opencontext/.opencode extensions. Run /trust to enable them for this workspace.",
+      duration: 10000,
+    })
   })
 
   sdk.event.on(TuiEvent.CommandExecute.type, (evt) => {

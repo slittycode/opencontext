@@ -28,6 +28,8 @@ import { useArgs } from "./args"
 import { batch, onMount } from "solid-js"
 import { Log } from "@/util/log"
 import type { Path } from "@opencode-ai/sdk"
+import { Flag } from "@/flag/flag"
+import nodePath from "path"
 
 type ContextEntry = {
   path: string
@@ -38,6 +40,16 @@ type ContextEntry = {
   updatedAt: number
   createdBy?: string
   summary?: string
+}
+
+type WorkspaceTrust = {
+  projectID: string
+  worktree: string
+  directory: string
+  trusted: boolean
+  trustedByProject: boolean
+  trustedByEnv: boolean
+  hasLocalExtensions: boolean
 }
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
@@ -90,6 +102,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       context_content: {
         [sessionID: string]: Record<string, string>
       }
+      workspace_trust: WorkspaceTrust | undefined
     }>({
       provider_next: {
         all: [],
@@ -119,9 +132,67 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       path: { state: "", config: "", worktree: "", directory: "" },
       context: {},
       context_content: {},
+      workspace_trust: undefined,
     })
 
     const sdk = useSDK()
+
+    function listAncestorQueries(pathInfo: Path) {
+      const result: string[] = [""]
+      const directory = nodePath.resolve(pathInfo.directory)
+      const worktree = nodePath.resolve(pathInfo.worktree)
+      if (!directory || !worktree) return result
+
+      let cursor = directory
+      const visited = new Set<string>()
+      while (cursor !== worktree) {
+        const parent = nodePath.dirname(cursor)
+        if (parent === cursor || visited.has(parent)) break
+        visited.add(parent)
+        const relative = nodePath.relative(directory, parent)
+        result.push(relative || "")
+        cursor = parent
+      }
+      return result
+    }
+
+    async function hasWorkspaceExtensions(pathInfo: Path) {
+      const targets = new Set([".opencontext", ".opencode"])
+      for (const queryPath of listAncestorQueries(pathInfo)) {
+        const entries = await sdk.client.file
+          .list({ path: queryPath })
+          .then((res) => res.data ?? [])
+          .catch(() => [])
+        if (entries.some((entry) => entry.type === "directory" && targets.has(entry.name))) {
+          return true
+        }
+      }
+      return false
+    }
+
+    async function syncWorkspaceTrust(pathInfo: Path) {
+      const project = await sdk.client.project
+        .current()
+        .then((res) => res.data)
+        .catch(() => undefined)
+      if (!project) {
+        setStore("workspace_trust", undefined)
+        return
+      }
+
+      const trustedByProject = (project as any).trust?.projectConfig === true
+      const trustedByEnv = Flag.OPENCODE_TRUST_PROJECT
+      const hasLocalExtensions = await hasWorkspaceExtensions(pathInfo)
+      setStore("workspace_trust", {
+        projectID: project.id,
+        worktree: project.worktree,
+        directory: pathInfo.directory,
+        trusted: trustedByProject || trustedByEnv,
+        trustedByProject,
+        trustedByEnv,
+        hasLocalExtensions,
+      })
+    }
 
     sdk.event.listen((e) => {
       const event = e.details
@@ -413,7 +484,11 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             }),
             sdk.client.provider.auth().then((x) => setStore("provider_auth", reconcile(x.data ?? {}))),
             sdk.client.vcs.get().then((x) => setStore("vcs", reconcile(x.data))),
-            sdk.client.path.get().then((x) => setStore("path", reconcile(x.data!))),
+            sdk.client.path.get().then(async (x) => {
+              const info = x.data!
+              setStore("path", reconcile(info))
+              await syncWorkspaceTrust(info)
+            }),
           ]).then(() => {
             setStore("status", "complete")
           })

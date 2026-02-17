@@ -96,6 +96,20 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
       if (timer) clearTimeout(timer)
     })
 
-    return { client: sdk, event: emitter, url: props.url }
+    function request(inputPath: string, init?: RequestInit) {
+      const url = new URL(inputPath, props.url)
+      const mergedHeaders = new Headers(props.headers ?? {})
+      const requestHeaders = new Headers(init?.headers ?? {})
+      for (const [key, value] of requestHeaders.entries()) {
+        mergedHeaders.set(key, value)
+      }
+      return (props.fetch ?? fetch)(url, {
+        ...init,
+        signal: abort.signal,
+        headers: mergedHeaders,
+      })
+    }
+
+    return { client: sdk, event: emitter, url: props.url, request }
   },
 })

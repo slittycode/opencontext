@@ -41,10 +41,24 @@ export const WebCommand = cmd({
       return
     }
 
-    if (!Flag.OPENCODE_SERVER_PASSWORD) {
-      UI.println(UI.Style.TEXT_WARNING_BOLD + "!  " + "OPENCODE_SERVER_PASSWORD is not set; server is unsecured.")
-    }
     const opts = await resolveNetworkOptions(args)
+
+    try {
+      Server.assertSecureServerConfig(opts.hostname)
+    } catch (error) {
+      UI.error(error instanceof Error ? error.message : String(error))
+      process.exitCode = 1
+      return
+    }
+
+    if (!Flag.OPENCODE_SERVER_PASSWORD && Server.isLoopbackHostname(opts.hostname)) {
+      UI.println(
+        UI.Style.TEXT_WARNING_BOLD +
+          "!  " +
+          "OPENCODE_SERVER_PASSWORD is not set; server is only safe for loopback use.",
+      )
+    }
+
     const server = Server.listen(opts)
     UI.empty()
     UI.println(UI.logo("  "))

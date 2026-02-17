@@ -1127,6 +1127,11 @@ export function Prompt(props: PromptProps) {
                       {keybind.print("variant_cycle")} <span style={{ fg: theme.textMuted }}>variants</span>
                     </text>
                   </Show>
+                  <Show when={local.agent.mode.list(local.agent.current().name).length > 0}>
+                    <text fg={theme.text}>
+                      {keybind.print("mode_cycle")} <span style={{ fg: theme.textMuted }}>modes</span>
+                    </text>
+                  </Show>
                   <text fg={theme.text}>
                     {keybind.print("agent_cycle")} <span style={{ fg: theme.textMuted }}>agents</span>
                   </text>

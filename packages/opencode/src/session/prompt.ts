@@ -47,6 +47,7 @@ import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { resolveSessionAgent } from "./agent-resolution"
+import { BashArity } from "@/permission/arity"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -1723,7 +1724,22 @@ NOTE: At any point in time through this workflow you should feel free to ask the
   export async function command(input: CommandInput) {
     log.info("command", input)
     const command = await Command.get(input.command)
+    if (!command) {
+      throw new NamedError.Unknown({ message: `Command not found: "${input.command}".` })
+    }
     const agentName = command.agent ?? input.agent ?? (await Agent.defaultAgent())
+    const session = await Session.get(input.sessionID)
+    const agentResolution = await resolveSessionAgent({
+      requested: agentName,
+      context: "command",
+      mode: "error",
+      sessionID: input.sessionID,
+    })
+    const agent = agentResolution.agent
+    if (!agent) {
+      throw new NamedError.Unknown({ message: `Agent not found: "${agentName}".` })
+    }
+    const commandRuleset = PermissionNext.merge(agent.permission, session.permission ?? [])
 
     const raw = input.arguments.match(argsRegex) ?? []
     const args = raw.map((arg) => arg.replace(quoteTrimRegex, ""))
@@ -1756,15 +1772,31 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 
     const shell = ConfigMarkdown.shell(template)
     if (shell.length > 0) {
-      const results = await Promise.all(
-        shell.map(async ([, cmd]) => {
-          try {
-            return await $`${{ raw: cmd }}`.quiet().nothrow().text()
-          } catch (error) {
-            return `Error executing command: ${error instanceof Error ? error.message : String(error)}`
-          }
-        }),
-      )
+      const results: string[] = []
+      for (const [, cmd] of shell) {
+        const tokens = (cmd.match(argsRegex) ?? []).map((token) => token.replace(quoteTrimRegex, ""))
+        const prefix = BashArity.prefix(tokens)
+        const alwaysPattern = prefix.length > 0 ? `${prefix.join(" ")} *` : "*"
+
+        await PermissionNext.ask({
+          sessionID: input.sessionID,
+          permission: "bash",
+          metadata: {
+            command: cmd,
+            source: "command-template",
+            commandID: input.command,
+          },
+          patterns: [cmd],
+          always: [alwaysPattern],
+          ruleset: commandRuleset,
+        })
+
+        try {
+          results.push(await $`${{ raw: cmd }}`.quiet().nothrow().text())
+        } catch (error) {
+          results.push(`Error executing command: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
       let index = 0
       template = template.replace(bashRegex, () => results[index++])
     }
@@ -1797,17 +1829,6 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       }
       throw e
     }
-    const agentResolution = await resolveSessionAgent({
-      requested: agentName,
-      context: "command",
-      mode: "error",
-      sessionID: input.sessionID,
-    })
-    const agent = agentResolution.agent
-    if (!agent) {
-      throw new NamedError.Unknown({ message: `Agent not found: "${agentName}".` })
-    }
-
     const templateParts = await resolvePromptParts(template)
     const isSubtask = (agent.mode === "subagent" && command.subtask !== false) || command.subtask === true
     const parts = isSubtask
@@ -1828,14 +1849,14 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       : [...templateParts, ...(input.parts ?? [])]
 
     const userAgent = isSubtask
-      ? (
+      ? ((
           await resolveSessionAgent({
             requested: input.agent ?? (await Agent.defaultAgent()),
             context: "command",
             mode: "error",
             sessionID: input.sessionID,
           })
-        ).agent?.name ?? (await Agent.defaultAgent())
+        ).agent?.name ?? (await Agent.defaultAgent()))
       : agent.name
     const userModel = isSubtask
       ? input.model

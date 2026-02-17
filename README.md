@@ -42,15 +42,15 @@ opencontext --version    # Show version
 
 Press `Tab` or type `/agents` to switch between primary agent personalities:
 
-| Agent              | Mode      | Description                                                     |
-| ------------------ | --------- | --------------------------------------------------------------- |
-| 🔧 **coding**      | primary   | Full-access coding agent (default)                              |
-| 📋 **plan**        | primary   | Planning mode with file edits disabled                          |
-| 🔍 **researcher**  | primary   | Multi-source research and evidence-based synthesis              |
-| 🎓 **teacher**     | primary   | Adaptive explanations and guided learning                       |
-| ✨ **ideator**     | primary   | Creative ideation and structured idea evaluation                |
-| 📝 **career**      | primary   | Career strategy, CV/resume, interview preparation              |
-| 🧰 **codeexpert**  | primary   | Code understanding, implementation, and improvement             |
+| Agent             | Mode    | Description                                         |
+| ----------------- | ------- | --------------------------------------------------- |
+| 🔧 **coding**     | primary | Full-access coding agent (default)                  |
+| 📋 **plan**       | primary | Planning mode with file edits disabled              |
+| 🔍 **researcher** | primary | Multi-source research and evidence-based synthesis  |
+| 🎓 **teacher**    | primary | Adaptive explanations and guided learning           |
+| ✨ **ideator**    | primary | Creative ideation and structured idea evaluation    |
+| 📝 **career**     | primary | Career strategy, CV/resume, interview preparation   |
+| 🧰 **codeexpert** | primary | Code understanding, implementation, and improvement |
 
 Subagents also available: `general` and `explore`.
 Legacy alias: `build` maps to `coding` and is hidden by default.
@@ -65,6 +65,26 @@ opencontext mcp add
 ```
 
 In the TUI, open the MCP dialog with `/mcps` (plural).
+
+### Trusting Project Extensions
+
+For safety, project-local `.opencontext` / `.opencode` extension directories are disabled by default.
+Execution-capable keys in project config files are also ignored until trusted (`plugin`, `mcp`, `formatter`, `lsp`).
+
+```bash
+opencontext trust status   # Check trust state for current workspace
+opencontext trust enable   # Trust local extension directories for this workspace
+opencontext trust disable  # Revoke trust
+```
+
+One-off override for scripts: set `OPENCODE_TRUST_PROJECT=1`.
+
+### Server Security Defaults
+
+When `opencontext serve` or `opencontext web` binds to a non-loopback host (for example `0.0.0.0`),
+`OPENCODE_SERVER_PASSWORD` is required by default.
+
+To bypass this in controlled environments, set `OPENCODE_SERVER_ALLOW_INSECURE=1`.
 
 ---
 
@@ -132,7 +152,7 @@ Add custom agents in your config:
 
 OpenContext uses OpenCode's client-server architecture:
 
-- **TUI Client** — React-based terminal interface (@opentui)  
+- **TUI Client** — React-based terminal interface (@opentui)
 - **Backend Server** — Bun/Hono server handling LLM calls and tools
 - **Agent System** — Permission-based tool access per agent personality
 

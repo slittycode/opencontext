@@ -89,3 +89,42 @@ describe("Project.discover", () => {
     expect(updated.icon).toBeUndefined()
   })
 })
+
+describe("Project trust", () => {
+  test("setProjectConfigTrust persists trust state", async () => {
+    await using tmp = await tmpdir()
+    const { project } = await Project.fromDirectory(tmp.path)
+
+    expect(Project.isProjectConfigTrusted(project)).toBe(false)
+
+    const trusted = await Project.setProjectConfigTrust(project.id, true)
+    expect(trusted.trust?.projectConfig).toBe(true)
+    expect(Project.isProjectConfigTrusted(trusted)).toBe(true)
+
+    const untrusted = await Project.setProjectConfigTrust(project.id, false)
+    expect(untrusted.trust?.projectConfig).toBe(false)
+    expect(Project.isProjectConfigTrusted(untrusted)).toBe(false)
+  })
+
+  test("OPENCODE_TRUST_PROJECT env override forces trusted state", async () => {
+    const prev = process.env.OPENCODE_TRUST_PROJECT
+    process.env.OPENCODE_TRUST_PROJECT = "1"
+    try {
+      expect(Project.isProjectConfigTrusted({ trust: { projectConfig: false } })).toBe(true)
+    } finally {
+      if (prev === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+      else process.env.OPENCODE_TRUST_PROJECT = prev
+    }
+  })
+
+  test("Project.update can persist trust state", async () => {
+    await using tmp = await tmpdir()
+    const { project } = await Project.fromDirectory(tmp.path)
+
+    const updated = await Project.update({
+      projectID: project.id,
+      trust: { projectConfig: true },
+    })
+    expect(updated.trust?.projectConfig).toBe(true)
+  })
+})

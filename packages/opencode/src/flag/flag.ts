@@ -28,9 +28,11 @@ export namespace Flag {
   export declare const OPENCODE_DISABLE_PROJECT_CONFIG: boolean
   export const OPENCODE_FAKE_VCS = process.env["OPENCODE_FAKE_VCS"]
   export declare const OPENCODE_CLIENT: string
-  export const OPENCODE_SERVER_PASSWORD = process.env["OPENCODE_SERVER_PASSWORD"]
-  export const OPENCODE_SERVER_USERNAME = process.env["OPENCODE_SERVER_USERNAME"]
+  export declare const OPENCODE_SERVER_PASSWORD: string | undefined
+  export declare const OPENCODE_SERVER_USERNAME: string | undefined
+  export declare const OPENCODE_SERVER_ALLOW_INSECURE: boolean
   export const OPENCODE_ENABLE_WEB_BACKEND = truthy("OPENCODE_ENABLE_WEB_BACKEND")
+  export declare const OPENCODE_TRUST_PROJECT: boolean
 
   // Experimental
   export const OPENCODE_EXPERIMENTAL = truthy("OPENCODE_EXPERIMENTAL")
@@ -88,6 +90,41 @@ Object.defineProperty(Flag, "OPENCODE_CONFIG_DIR", {
 Object.defineProperty(Flag, "OPENCODE_CLIENT", {
   get() {
     return process.env["OPENCODE_CLIENT"] ?? "cli"
+  },
+  enumerable: true,
+  configurable: false,
+})
+
+// Dynamic getter for OPENCODE_TRUST_PROJECT
+// This must be evaluated at access time, not module load time,
+// because tests and wrappers may set this env var dynamically.
+Object.defineProperty(Flag, "OPENCODE_TRUST_PROJECT", {
+  get() {
+    return truthy("OPENCODE_TRUST_PROJECT")
+  },
+  enumerable: true,
+  configurable: false,
+})
+
+Object.defineProperty(Flag, "OPENCODE_SERVER_PASSWORD", {
+  get() {
+    return process.env["OPENCODE_SERVER_PASSWORD"]
+  },
+  enumerable: true,
+  configurable: false,
+})
+
+Object.defineProperty(Flag, "OPENCODE_SERVER_USERNAME", {
+  get() {
+    return process.env["OPENCODE_SERVER_USERNAME"]
+  },
+  enumerable: true,
+  configurable: false,
+})
+
+Object.defineProperty(Flag, "OPENCODE_SERVER_ALLOW_INSECURE", {
+  get() {
+    return truthy("OPENCODE_SERVER_ALLOW_INSECURE")
   },
   enumerable: true,
   configurable: false,

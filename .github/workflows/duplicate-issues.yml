@@ -18,9 +18,6 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
-
       - name: Check for duplicate issues
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -34,7 +31,7 @@ jobs:
               "webfetch": "deny"
             }
         run: |
-          opencode run -m opencode/claude-haiku-4-5 "A new issue has been created:'
+          bun run --cwd packages/opencode --conditions=browser src/index.ts run -m opencode/claude-haiku-4-5 "A new issue has been created:'
 
           Issue number:
           ${{ github.event.issue.number }}
