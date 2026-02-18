@@ -536,6 +536,32 @@ opencode upgrade v0.1.48
 
 ---
 
+### dev-update
+
+Rebuild a local OpenContext binary from a source checkout.
+
+```bash
+opencontext dev-update
+```
+
+This command is intended for local development builds. It searches for a nearby source checkout and runs:
+
+```bash
+bun run --cwd packages/opencode script/build.ts --single --skip-install
+```
+
+It also prints iterative build context: version before, source git revision, and version after.
+
+If the checkout is not discoverable from your current directory, pass an explicit path.
+
+#### Flags
+
+| Flag     | Short | Description                                              |
+| -------- | ----- | -------------------------------------------------------- |
+| `--path` | `-p`  | Path to repo root or `packages/opencode` in that checkout |
+
+---
+
 ## Global Flags
 
 The opencode CLI takes the following global flags.

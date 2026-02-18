@@ -1,9 +1,20 @@
-import { describe, expect, test } from "bun:test"
+import { afterAll, beforeEach, describe, expect, test } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
 import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { ProviderAuth } from "../../src/provider/auth"
+
+const originalTrustProject = process.env.OPENCODE_TRUST_PROJECT
+
+beforeEach(() => {
+  process.env.OPENCODE_TRUST_PROJECT = "1"
+})
+
+afterAll(() => {
+  if (originalTrustProject === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+  else process.env.OPENCODE_TRUST_PROJECT = originalTrustProject
+})
 
 describe("plugin.auth-override", () => {
   test("user plugin overrides built-in github-copilot auth", async () => {

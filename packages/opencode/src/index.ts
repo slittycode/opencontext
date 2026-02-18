@@ -7,6 +7,7 @@ import { AuthCommand } from "./cli/cmd/auth"
 import { AgentCommand } from "./cli/cmd/agent"
 import { UpgradeCommand } from "./cli/cmd/upgrade"
 import { UninstallCommand } from "./cli/cmd/uninstall"
+import { DevUpdateCommand } from "./cli/cmd/dev-update"
 import { ModelsCommand } from "./cli/cmd/models"
 import { UI } from "./cli/ui"
 import { Installation } from "./installation"
@@ -90,6 +91,7 @@ const cli = yargs(hideBin(process.argv))
   .command(AuthCommand)
   .command(AgentCommand)
   .command(UpgradeCommand)
+  .command(DevUpdateCommand)
   .command(UninstallCommand)
   .command(ServeCommand)
   .command(WebCommand)

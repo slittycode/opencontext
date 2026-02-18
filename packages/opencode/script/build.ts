@@ -28,6 +28,7 @@ console.log("Generated models-snapshot.ts")
 const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
 const skipInstall = process.argv.includes("--skip-install")
+const keepBunBuild = process.argv.includes("--keep-bun-build")
 
 const allTargets: {
   os: string
@@ -109,85 +110,114 @@ const targets = singleFlag
     })
   : allTargets
 
+function pruneBunBuildArtifacts(stage: "before" | "after") {
+  let removed = 0
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isFile()) continue
+    if (!entry.name.startsWith(".")) continue
+    if (!entry.name.endsWith(".bun-build")) continue
+    fs.rmSync(path.join(dir, entry.name), { force: true })
+    removed += 1
+  }
+  if (removed > 0) {
+    console.log(`[build.ts] Pruned ${removed} .bun-build artifact(s) ${stage} build`)
+  }
+}
+
+if (!keepBunBuild) {
+  pruneBunBuildArtifacts("before")
+}
+
 await $`rm -rf dist`
 
 const binaries: Record<string, string> = {}
-if (!skipInstall) {
-  await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
-  await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
-}
-for (const item of targets) {
-  const name = [
-    pkg.name,
-    // changing to win32 flags npm for some reason
-    item.os === "win32" ? "windows" : item.os,
-    item.arch,
-    item.avx2 === false ? "baseline" : undefined,
-    item.abi === undefined ? undefined : item.abi,
-  ]
-    .filter(Boolean)
-    .join("-")
-  console.log(`building ${name}`)
-  await $`mkdir -p dist/${name}/bin`
-
-  const parserWorker = fs.realpathSync(path.resolve(dir, "./node_modules/@opentui/core/parser.worker.js"))
-  const workerPath = "./src/cli/cmd/tui/worker.ts"
-
-  // Use platform-specific bunfs root path based on target OS
-  const bunfsRoot = item.os === "win32" ? "B:/~BUN/root/" : "/$bunfs/root/"
-  const workerRelativePath = path.relative(dir, parserWorker).replaceAll("\\", "/")
-
-  await Bun.build({
-    conditions: ["browser"],
-    tsconfig: "./tsconfig.json",
-    plugins: [solidPlugin],
-    sourcemap: "external",
-    compile: {
-      autoloadBunfig: false,
-      autoloadDotenv: false,
-      //@ts-ignore (bun types aren't up to date)
-      autoloadTsconfig: true,
-      autoloadPackageJson: true,
-      target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/opencontext`,
-      execArgv: [`--user-agent=opencontext/${Script.version}`, "--use-system-ca", "--"],
-      windows: {},
-    },
-    entrypoints: ["./src/index.ts", parserWorker, workerPath],
-    define: {
-      OPENCODE_VERSION: `'${Script.version}'`,
-      OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + workerRelativePath,
-      OPENCODE_WORKER_PATH: workerPath,
-      OPENCODE_CHANNEL: `'${Script.channel}'`,
-      OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
-    },
-  })
-
-  await $`rm -rf ./dist/${name}/bin/tui`
-  await Bun.file(`dist/${name}/package.json`).write(
-    JSON.stringify(
-      {
-        name,
-        version: Script.version,
-        os: [item.os],
-        cpu: [item.arch],
-      },
-      null,
-      2,
-    ),
-  )
-  binaries[name] = Script.version
-}
-
-if (Script.release) {
-  for (const key of Object.keys(binaries)) {
-    if (key.includes("linux")) {
-      await $`tar -czf ../../${key}.tar.gz *`.cwd(`dist/${key}/bin`)
+try {
+  if (!skipInstall) {
+    if (singleFlag) {
+      await $`bun install @opentui/core@${pkg.dependencies["@opentui/core"]}`
+      await $`bun install @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
     } else {
-      await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
+      await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
+      await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
     }
   }
-  await $`gh release upload v${Script.version} ./dist/*.zip ./dist/*.tar.gz --clobber`
+  for (const item of targets) {
+    const name = [
+      pkg.name,
+      // changing to win32 flags npm for some reason
+      item.os === "win32" ? "windows" : item.os,
+      item.arch,
+      item.avx2 === false ? "baseline" : undefined,
+      item.abi === undefined ? undefined : item.abi,
+    ]
+      .filter(Boolean)
+      .join("-")
+    console.log(`building ${name}`)
+    await $`mkdir -p dist/${name}/bin`
+
+    const parserWorker = fs.realpathSync(path.resolve(dir, "./node_modules/@opentui/core/parser.worker.js"))
+    const workerPath = "./src/cli/cmd/tui/worker.ts"
+
+    // Use platform-specific bunfs root path based on target OS
+    const bunfsRoot = item.os === "win32" ? "B:/~BUN/root/" : "/$bunfs/root/"
+    const workerRelativePath = path.relative(dir, parserWorker).replaceAll("\\", "/")
+
+    await Bun.build({
+      conditions: ["browser"],
+      tsconfig: "./tsconfig.json",
+      plugins: [solidPlugin],
+      sourcemap: "external",
+      compile: {
+        autoloadBunfig: false,
+        autoloadDotenv: false,
+        //@ts-ignore (bun types aren't up to date)
+        autoloadTsconfig: true,
+        autoloadPackageJson: true,
+        target: name.replace(pkg.name, "bun") as any,
+        outfile: `dist/${name}/bin/opencontext`,
+        execArgv: [`--user-agent=opencontext/${Script.version}`, "--use-system-ca", "--"],
+        windows: {},
+      },
+      entrypoints: ["./src/index.ts", parserWorker, workerPath],
+      define: {
+        OPENCODE_VERSION: `'${Script.version}'`,
+        OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + workerRelativePath,
+        OPENCODE_WORKER_PATH: workerPath,
+        OPENCODE_CHANNEL: `'${Script.channel}'`,
+        OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
+      },
+    })
+
+    await $`rm -rf ./dist/${name}/bin/tui`
+    await Bun.file(`dist/${name}/package.json`).write(
+      JSON.stringify(
+        {
+          name,
+          version: Script.version,
+          os: [item.os],
+          cpu: [item.arch],
+        },
+        null,
+        2,
+      ),
+    )
+    binaries[name] = Script.version
+  }
+
+  if (Script.release) {
+    for (const key of Object.keys(binaries)) {
+      if (key.includes("linux")) {
+        await $`tar -czf ../../${key}.tar.gz *`.cwd(`dist/${key}/bin`)
+      } else {
+        await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
+      }
+    }
+    await $`gh release upload v${Script.version} ./dist/*.zip ./dist/*.tar.gz --clobber`
+  }
+} finally {
+  if (!keepBunBuild) {
+    pruneBunBuildArtifacts("after")
+  }
 }
 
 export { binaries }

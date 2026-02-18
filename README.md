@@ -12,6 +12,8 @@ OpenContext extends OpenCode's powerful terminal interface with specialized agen
 
 **Prerequisites:** [Bun](https://bun.sh) runtime
 
+### Full Monorepo Bootstrap (Default, <=2GB target)
+
 ```bash
 # Install Bun (if not installed)
 curl -fsSL https://bun.sh/install | bash
@@ -26,6 +28,17 @@ bash ./script/bootstrap-v1.sh
 opencontext
 ```
 
+### Lean CLI Bootstrap (<=500MB target)
+
+```bash
+git clone https://github.com/slittycode/opencontext.git
+cd opencontext
+bash ./script/bootstrap-v1-cli.sh
+# or: bun run bootstrap:v1:cli
+
+opencontext
+```
+
 `curl | bash` installer rollout is intentionally deferred until release artifacts are guaranteed.
 
 ---
@@ -36,6 +49,9 @@ opencontext
 opencontext              # Launch interactive TUI
 opencontext --help       # Show all commands
 opencontext --version    # Show version
+opencontext dev-update   # Rebuild local binary from source checkout
+bun run size:audit       # Print footprint summary (human + JSON)
+bun run size:clean       # Remove regenerable footprint artifacts
 ```
 
 ### Switching Agents

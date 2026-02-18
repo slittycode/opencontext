@@ -10,9 +10,12 @@
   },
   "scripts": {
     "bootstrap:v1": "bash ./script/bootstrap-v1.sh",
+    "bootstrap:v1:cli": "bash ./script/bootstrap-v1-cli.sh",
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "dev:desktop": "bun --cwd packages/desktop tauri dev",
     "dev:web": "bun --cwd packages/app dev",
+    "size:audit": "bun ./script/size-audit.ts",
+    "size:clean": "bash ./script/size-clean.sh",
     "typecheck": "bun turbo typecheck",
     "prepare": "husky",
     "test": "bun --cwd packages/opencode test"

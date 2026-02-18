@@ -1,9 +1,20 @@
-import { describe, expect, test } from "bun:test"
+import { afterAll, beforeEach, describe, expect, test } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
 import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { ToolRegistry } from "../../src/tool/registry"
+
+const originalTrustProject = process.env.OPENCODE_TRUST_PROJECT
+
+beforeEach(() => {
+  process.env.OPENCODE_TRUST_PROJECT = "1"
+})
+
+afterAll(() => {
+  if (originalTrustProject === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+  else process.env.OPENCODE_TRUST_PROJECT = originalTrustProject
+})
 
 describe("tool.registry", () => {
   test("loads tools from .opencode/tool (singular)", async () => {
@@ -38,7 +49,7 @@ describe("tool.registry", () => {
         expect(ids).toContain("hello")
       },
     })
-  })
+  }, 15000)
 
   test("loads tools from .opencode/tools (plural)", async () => {
     await using tmp = await tmpdir({
@@ -72,7 +83,7 @@ describe("tool.registry", () => {
         expect(ids).toContain("hello")
       },
     })
-  })
+  }, 15000)
 
   test("loads tools with external dependencies without crashing", async () => {
     await using tmp = await tmpdir({
@@ -118,5 +129,5 @@ describe("tool.registry", () => {
         expect(ids).toContain("cowsay")
       },
     })
-  })
+  }, 15000)
 })

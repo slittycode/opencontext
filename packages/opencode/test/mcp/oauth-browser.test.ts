@@ -1,9 +1,10 @@
-import { test, expect, mock, beforeEach } from "bun:test"
+import { test, expect, mock, beforeEach, afterAll } from "bun:test"
 import { EventEmitter } from "events"
 
 // Track open() calls and control failure behavior
 let openShouldFail = false
 let openCalledWith: string | undefined
+const originalTrustProject = process.env.OPENCODE_TRUST_PROJECT
 
 mock.module("open", () => ({
   default: async (url: string) => {
@@ -93,9 +94,15 @@ mock.module("@modelcontextprotocol/sdk/client/auth.js", () => ({
 }))
 
 beforeEach(() => {
+  process.env.OPENCODE_TRUST_PROJECT = "1"
   openShouldFail = false
   openCalledWith = undefined
   transportCalls.length = 0
+})
+
+afterAll(() => {
+  if (originalTrustProject === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+  else process.env.OPENCODE_TRUST_PROJECT = originalTrustProject
 })
 
 // Import modules after mocking

@@ -66,7 +66,8 @@ test("includes mode_cycle keybind default", async () => {
     directory: tmp.path,
     fn: async () => {
       const config = await Config.get()
-      expect(config.keybinds?.mode_cycle).toBe("ctrl+m")
+      expect(config.keybinds?.mode_cycle).toBe("<leader>m")
+      expect(config.keybinds?.model_list).toBe("<leader>o")
     },
   })
 })

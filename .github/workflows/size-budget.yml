@@ -1,0 +1,61 @@
+name: size-budget
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  full-install-budget:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (full install)
+        uses: ./.github/actions/setup-bun
+        with:
+          install-mode: full
+
+      - name: Audit repository size
+        run: bun run size:audit --json > /tmp/size-audit.json
+
+      - name: Enforce full footprint budget (<= 2GB)
+        run: |
+          limit_kb=$((2 * 1024 * 1024))
+          repo_kb=$(jq -r '.repo_total_kb' /tmp/size-audit.json)
+          echo "repo_total_kb=${repo_kb}"
+          if [ "${repo_kb}" -gt "${limit_kb}" ]; then
+            echo "Full install footprint exceeds budget: ${repo_kb}KB > ${limit_kb}KB" >&2
+            exit 1
+          fi
+
+  lean-bootstrap-budget:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Run lean bootstrap smoke test
+        run: |
+          OPENCONTEXT_BOOTSTRAP_SKIP_PATH=1 \
+          OPENCONTEXT_LEAN_SIZE_OUTPUT=/tmp/opencontext-lean-size-kb.txt \
+          bash ./script/bootstrap-v1-cli.sh
+          "$HOME/.local/bin/opencontext" --version
+
+      - name: Enforce lean workspace budget (<= 500MB)
+        run: |
+          limit_kb=$((500 * 1024))
+          lean_kb=$(cat /tmp/opencontext-lean-size-kb.txt)
+          echo "lean_workspace_kb=${lean_kb}"
+          if [ "${lean_kb}" -gt "${limit_kb}" ]; then
+            echo "Lean bootstrap workspace exceeds budget: ${lean_kb}KB > ${limit_kb}KB" >&2
+            exit 1
+          fi

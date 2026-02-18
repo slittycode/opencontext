@@ -34,13 +34,17 @@ info "Bootstrapping OpenContext v1 from ${REPO_ROOT}"
 
 cd "${REPO_ROOT}"
 
-info "1/4 Installing dependencies (bun install)..."
-bun install
+info "1/5 Cleaning prior install/build artifacts..."
+rm -rf node_modules
+find "${REPO_ROOT}/packages/opencode" -maxdepth 1 -type f -name '.*.bun-build' -delete 2>/dev/null || true
 
-info "2/4 Building local OpenContext binary..."
-bun run --cwd packages/opencode script/build.ts --single --skip-install
+info "2/5 Installing dependencies (bun install --frozen-lockfile --omit=optional)..."
+bun install --frozen-lockfile --omit=optional
 
-info "3/4 Linking command into ${LOCAL_BIN_DIR}..."
+info "3/5 Building local OpenContext binary..."
+bun run --cwd packages/opencode script/build.ts --single
+
+info "4/5 Linking command into ${LOCAL_BIN_DIR}..."
 binary_path="$(
   find "${REPO_ROOT}/packages/opencode/dist" \
     -type f \
@@ -56,7 +60,7 @@ fi
 mkdir -p "${LOCAL_BIN_DIR}"
 ln -sf "${binary_path}" "${TARGET_LINK}"
 
-info "4/4 Ensuring shell PATH includes ${LOCAL_BIN_DIR}..."
+info "5/5 Ensuring shell PATH includes ${LOCAL_BIN_DIR}..."
 path_updates=0
 path_already=0
 
@@ -77,6 +81,10 @@ for rc_file in "${PATH_FILES[@]}"; do
 done
 
 hash -r 2>/dev/null || true
+
+info ""
+info "Size audit:"
+bun run size:audit
 
 info ""
 info "Bootstrap complete."

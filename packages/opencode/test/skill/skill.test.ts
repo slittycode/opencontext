@@ -1,9 +1,20 @@
-import { test, expect } from "bun:test"
+import { test, expect, beforeEach, afterAll } from "bun:test"
 import { Skill } from "../../src/skill"
 import { Instance } from "../../src/project/instance"
 import { tmpdir } from "../fixture/fixture"
 import path from "path"
 import fs from "fs/promises"
+
+const originalTrustProject = process.env.OPENCODE_TRUST_PROJECT
+
+beforeEach(() => {
+  process.env.OPENCODE_TRUST_PROJECT = "1"
+})
+
+afterAll(() => {
+  if (originalTrustProject === undefined) delete process.env.OPENCODE_TRUST_PROJECT
+  else process.env.OPENCODE_TRUST_PROJECT = originalTrustProject
+})
 
 async function createGlobalSkill(homeDir: string) {
   const skillDir = path.join(homeDir, ".claude", "skills", "global-test-skill")

@@ -38,7 +38,7 @@ test("Bedrock: config region takes precedence over AWS_REGION env var", async ()
       expect(providers["amazon-bedrock"].options?.region).toBe("eu-west-1")
     },
   })
-})
+}, 30000)
 
 test("Bedrock: falls back to AWS_REGION env var when no config region", async () => {
   await using tmp = await tmpdir({

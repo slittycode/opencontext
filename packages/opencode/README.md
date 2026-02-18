@@ -7,7 +7,7 @@ Core CLI/TUI runtime for OpenContext (forked from OpenCode).
 From repo root:
 
 ```bash
-bun install
+bun install --omit=optional
 bun run --cwd packages/opencode --conditions=browser src/index.ts
 ```
 
@@ -31,6 +31,15 @@ For binary/build path changes:
 
 ```bash
 bun run --cwd packages/opencode script/build.ts --single --skip-install
+```
+
+Bootstrap options from repo root:
+
+```bash
+bun run bootstrap:v1      # full monorepo bootstrap (<=2GB target)
+bun run bootstrap:v1:cli  # lean CLI bootstrap (<=500MB target)
+bun run size:audit        # inspect current footprint
+bun run size:clean        # remove regenerable footprint artifacts
 ```
 
 ## Key Paths
