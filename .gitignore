@@ -27,3 +27,7 @@ target
 opencode-dev
 logs/
 *.bun-build
+
+# AI tool configs
+CLAUDE.md
+.kiro/
