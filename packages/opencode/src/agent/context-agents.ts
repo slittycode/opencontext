@@ -18,6 +18,7 @@ import PROMPT_EDUCATOR from "./prompt/educator.txt"
 import PROMPT_IDEATOR from "./prompt/ideator.txt"
 import PROMPT_DEEP_RESEARCHER from "./prompt/deep-researcher.txt"
 import PROMPT_CODE_EXPERT from "./prompt/code-expert.txt"
+import PROMPT_COMPANION from "./prompt/companion.txt"
 
 type AgentFactory = (
   defaults: PermissionNext.Rule[],
@@ -235,5 +236,30 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
     mode: "primary",
     native: true,
     color: "#f97316",
+  },
+
+  // === Companion Agent: Persistent session memory ===
+  companion: {
+    name: "companion",
+    description: "Persistent agent with session memory. Remembers conversations.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        edit: "deny",
+        write: "deny",
+        bash: "deny",
+        websearch: "allow",
+        webfetch: "allow",
+        read: "allow",
+        question: "allow",
+        context_store: "allow",
+      }),
+      user,
+    ),
+    prompt: PROMPT_COMPANION,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#14b8a6",
   },
 })

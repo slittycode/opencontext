@@ -135,7 +135,8 @@ for (const item of targets) {
 
   // Use platform-specific bunfs root path based on target OS
   const bunfsRoot = item.os === "win32" ? "B:/~BUN/root/" : "/$bunfs/root/"
-  const workerRelativePath = path.relative(dir, parserWorker).replaceAll("\\", "/")
+  const parserWorkerRelativePath = path.relative(dir, parserWorker).replaceAll("\\", "/")
+  const bundledWorkerPath = bunfsRoot + workerPath.replace("./", "").replace(/\.ts$/, ".js")
 
   await Bun.build({
     conditions: ["browser"],
@@ -156,8 +157,8 @@ for (const item of targets) {
     entrypoints: ["./src/index.ts", parserWorker, workerPath],
     define: {
       OPENCODE_VERSION: `'${Script.version}'`,
-      OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + workerRelativePath,
-      OPENCODE_WORKER_PATH: workerPath,
+      OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + parserWorkerRelativePath,
+      OPENCODE_WORKER_PATH: bundledWorkerPath,
       OPENCODE_CHANNEL: `'${Script.channel}'`,
       OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
     },

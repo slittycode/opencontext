@@ -22,6 +22,7 @@ import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/tui/attach"
 import { TuiThreadCommand } from "./cli/cmd/tui/thread"
 import { AcpCommand } from "./cli/cmd/acp"
+import { CompanionCommand } from "./cli/cmd/companion"
 import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
@@ -81,7 +82,6 @@ const cli = yargs(hideBin(process.argv))
   .completion("completion", "generate shell completion script")
   .command(AcpCommand)
   .command(McpCommand)
-  .command(TuiThreadCommand)
   .command(AttachCommand)
   .command(RunCommand)
   .command(GenerateCommand)
@@ -99,6 +99,8 @@ const cli = yargs(hideBin(process.argv))
   .command(GithubCommand)
   .command(PrCommand)
   .command(SessionCommand)
+  .command(CompanionCommand)
+  .command(TuiThreadCommand)
   .fail((msg, err) => {
     if (
       msg?.startsWith("Unknown argument") ||
