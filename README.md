@@ -55,6 +55,7 @@ Press `Tab` or type `/agents` to switch between primary agent personalities:
 | ✨ **ideator**     | primary   | Open-ended ideation across product, technical, and creative work |
 | 🧪 **deep-researcher** | primary | Comprehensive multi-source research with credibility evaluation |
 | 🧰 **code-expert** | primary   | Code understanding, implementation, and improvement              |
+| 🤝 **companion**   | primary   | Persistent agent with session memory. Remembers conversations.   |
 
 Subagents also available: `general` and `explore`.
 Legacy alias: `build` maps to `coding` and is hidden by default.
