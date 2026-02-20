@@ -267,6 +267,7 @@ export const TuiRoutes = lazy(() =>
       async (c) => {
         const command = c.req.valid("json").command
         await Bus.publish(TuiEvent.CommandExecute, {
+          // FIXME: TuiEvent.CommandExecute expects specific literals, but we dynamically map strings from the API map block here.
           // @ts-expect-error
           command: {
             session_new: "session.new",

@@ -361,6 +361,7 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
     return {
       theme: new Proxy(values(), {
         get(_target, prop) {
+          // FIXME: TypeScript struggles with Proxy return types when accessing dynamically computed store keys here.
           // @ts-expect-error
           return values()[prop]
         },
