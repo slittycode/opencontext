@@ -1,0 +1,7 @@
+[0m[1mbun test [0m[2mv1.3.9 (cf6cdbbb)[0m
+Baseline: 14.08 MB
+After 50 fetches: 14.06 MB
+Growth: -0.02 MB
+OLD pattern (closure): 8.41 MB growth (500 closures)
+NEW pattern (bind): 0.00 MB growth
+Improvement: 8.41 MB saved

@@ -11,6 +11,7 @@ import { Global } from "../../global"
 import { Plugin } from "../../plugin"
 import { Instance } from "../../project/instance"
 import type { Hooks } from "@opencode-ai/plugin"
+import { Provider } from "../../provider/provider"
 
 type PluginAuth = NonNullable<Hooks["auth"]>
 
@@ -268,15 +269,6 @@ export const AuthLoginCommand = cmd({
           return filtered
         })
 
-        const priority: Record<string, number> = {
-          opencode: 0,
-          anthropic: 1,
-          "github-copilot": 2,
-          openai: 3,
-          google: 4,
-          openrouter: 5,
-          vercel: 6,
-        }
         let provider = await prompts.autocomplete({
           message: "Select provider",
           maxItems: 8,
@@ -285,7 +277,7 @@ export const AuthLoginCommand = cmd({
               providers,
               values(),
               sortBy(
-                (x) => priority[x.id] ?? 99,
+                (x) => Provider.PRIORITY[x.id] ?? 99,
                 (x) => x.name ?? x.id,
               ),
               map((x) => ({
@@ -357,7 +349,7 @@ export const AuthLoginCommand = cmd({
 
         if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
           prompts.log.info(
-            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
+            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencontext.ai/docs/providers/#cloudflare-ai-gateway",
           )
         }
 

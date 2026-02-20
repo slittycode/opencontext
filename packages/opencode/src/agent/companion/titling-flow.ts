@@ -100,21 +100,35 @@ export async function applyTitle(sessionID: string, userTitle: string): Promise<
  * @param sessionID - The session ID to check and generate suggestion for
  * @returns Object with wasUntitled flag and suggested title (null if already titled)
  */
+export async function hasMessages(sessionID: string): Promise<boolean> {
+  const messages = await Session.messages({ sessionID })
+  return messages.length > 0
+}
+
 export async function checkAndSuggestTitle(sessionID: string): Promise<{
   wasUntitled: boolean
   suggestion: string | null
 }> {
   const untitled = await isSessionUntitled(sessionID)
-  
+
   if (!untitled) {
     return {
       wasUntitled: false,
       suggestion: null,
     }
   }
-  
+
+  const messagesExist = await hasMessages(sessionID)
+  if (!messagesExist) {
+    log.info("session has no messages, skipping titling", { sessionID })
+    return {
+      wasUntitled: false,
+      suggestion: null,
+    }
+  }
+
   const suggestion = await generateDefaultTitle(sessionID)
-  
+
   return {
     wasUntitled: true,
     suggestion,

@@ -14,7 +14,6 @@ import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 import { MessageV2 } from "./message-v2"
 import { Instance } from "../project/instance"
-import { SessionPrompt } from "./prompt"
 import { fn } from "@/util/fn"
 import { Command } from "../command"
 import { Snapshot } from "@/snapshot"
@@ -23,6 +22,8 @@ import type { Provider } from "@/provider/provider"
 import { PermissionNext } from "@/permission/next"
 import { Global } from "@/global"
 
+// Defer importing SessionPrompt to break circular dependency
+// between Session -> SessionPrompt -> SessionProcessor -> Session
 export namespace Session {
   const log = Log.create({ service: "session" })
 
@@ -445,10 +446,8 @@ export namespace Session {
     (input) => {
       const cacheReadInputTokens = input.usage.cachedInputTokens ?? 0
       const cacheWriteInputTokens = (input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
-        // @ts-expect-error
-        input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
-        // @ts-expect-error
-        input.metadata?.["venice"]?.["usage"]?.["cacheCreationInputTokens"] ??
+        (input.metadata?.["bedrock"]?.["usage"] as any)?.["cacheWriteInputTokens"] ??
+        (input.metadata?.["venice"]?.["usage"] as any)?.["cacheCreationInputTokens"] ??
         0) as number
 
       const excludesCachedTokens = !!(input.metadata?.["anthropic"] || input.metadata?.["bedrock"])
@@ -505,6 +504,7 @@ export namespace Session {
       messageID: Identifier.schema("message"),
     }),
     async (input) => {
+      const { SessionPrompt } = await import("./prompt")
       await SessionPrompt.command({
         sessionID: input.sessionID,
         messageID: input.messageID,

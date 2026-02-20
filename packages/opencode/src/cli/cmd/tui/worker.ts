@@ -10,6 +10,7 @@ import { GlobalBus } from "@/bus/global"
 import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2"
 import type { BunWebSocketData } from "hono/bun"
 import { Flag } from "@/flag/flag"
+import { initCompanionLifecycle } from "@/agent/companion/lifecycle"
 
 await Log.init({
   print: process.argv.includes("--print-logs"),
@@ -119,6 +120,7 @@ export const rpc = {
   async server(input: { port: number; hostname: string; mdns?: boolean; cors?: string[] }) {
     if (server) await server.stop(true)
     server = Server.listen(input)
+    initCompanionLifecycle()
     return { url: server.url.toString() }
   },
   async checkUpgrade(input: { directory: string }) {

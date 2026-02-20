@@ -3,6 +3,7 @@ import { Instance } from "../../project/instance"
 import { Session } from "../../session"
 import { getAvailableSessions, createNewSession, loadExistingSession } from "../../agent/companion/session-selection"
 import { checkAndSuggestTitle, applyTitle } from "../../agent/companion/titling-flow"
+import { initCompanionLifecycle } from "../../agent/companion/lifecycle"
 import { select, text, confirm, isCancel } from "@clack/prompts"
 import { Log } from "../../util/log"
 import { tui } from "./tui/app"
@@ -61,6 +62,7 @@ export const CompanionCommand = cmd({
     await Instance.provide({
       directory: process.cwd(),
       fn: async () => {
+        initCompanionLifecycle()
         const sessionID = await selectCompanionSession()
         if (!sessionID) {
           console.log("Cancelled.")

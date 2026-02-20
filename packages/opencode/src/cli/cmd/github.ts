@@ -228,7 +228,7 @@ export const GithubInstallCommand = cmd({
                 "",
                 "    3. Go to a GitHub issue and comment `/oc summarize` to see the agent in action",
                 "",
-                "   Learn more about the GitHub agent - https://opencode.ai/docs/github/#usage-examples",
+                "   Learn more about the GitHub agent - https://opencontext.ai/docs/github/#usage-examples",
               ].join("\n"),
             )
           }
@@ -251,12 +251,6 @@ export const GithubInstallCommand = cmd({
           }
 
           async function promptProvider() {
-            const priority: Record<string, number> = {
-              opencode: 0,
-              anthropic: 1,
-              openai: 2,
-              google: 3,
-            }
             let provider = await prompts.select({
               message: "Select provider",
               maxItems: 8,
@@ -264,13 +258,13 @@ export const GithubInstallCommand = cmd({
                 providers,
                 values(),
                 sortBy(
-                  (x) => priority[x.id] ?? 99,
+                  (x) => Provider.PRIORITY[x.id] ?? 99,
                   (x) => x.name ?? x.id,
                 ),
                 map((x) => ({
                   label: x.name,
                   value: x.id,
-                  hint: priority[x.id] === 0 ? "recommended" : undefined,
+                  hint: Provider.PRIORITY[x.id] === 0 ? "recommended" : undefined,
                 })),
               ),
             })
@@ -347,7 +341,7 @@ export const GithubInstallCommand = cmd({
 
             async function getInstallation() {
               return await fetch(
-                `https://api.opencode.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
+                `https://api.opencontext.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
               )
                 .then((res) => res.json())
                 .then((data) => data.installation)
@@ -459,7 +453,7 @@ export const GithubRunCommand = cmd({
           ? (payload as IssueCommentEvent | IssuesEvent).issue.number
           : (payload as PullRequestEvent | PullRequestReviewCommentEvent).pull_request.number
       const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
-      const shareBaseUrl = isMock ? "https://dev.opencode.ai" : "https://opencode.ai"
+      const shareBaseUrl = isMock ? "https://dev.opencontext.ai" : "https://opencontext.ai"
 
       let appToken: string
       let octoRest: Octokit
@@ -675,7 +669,7 @@ export const GithubRunCommand = cmd({
 
       function normalizeOidcBaseUrl(): string {
         const value = process.env["OIDC_BASE_URL"]
-        if (!value) return "https://api.opencode.ai"
+        if (!value) return "https://api.opencontext.ai"
         return value.replace(/\/+$/, "")
       }
 

@@ -68,7 +68,7 @@ export namespace Share {
 
   export const URL =
     process.env["OPENCODE_API"] ??
-    (Installation.isPreview() || Installation.isLocal() ? "https://api.dev.opencode.ai" : "https://api.opencode.ai")
+    (Installation.isPreview() || Installation.isLocal() ? "https://api.dev.opencontext.ai" : "https://api.opencontext.ai")
 
   const disabled = process.env["OPENCODE_DISABLE_SHARE"] === "true" || process.env["OPENCODE_DISABLE_SHARE"] === "1"
 

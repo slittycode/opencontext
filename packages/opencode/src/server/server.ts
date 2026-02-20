@@ -544,11 +544,11 @@ export namespace Server {
 
           const path = c.req.path
 
-          const response = await proxy(`https://app.opencode.ai${path}`, {
+          const response = await proxy(`https://app.opencontext.ai${path}`, {
             ...c.req,
             headers: {
               ...c.req.raw.headers,
-              host: "app.opencode.ai",
+              host: "app.opencontext.ai",
             },
           })
           response.headers.set(

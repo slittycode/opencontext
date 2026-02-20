@@ -1,0 +1,1405 @@
+bun test v1.3.9 (cf6cdbbb)
+
+test/scheduler.test.ts:
+(pass) Scheduler.register > defaults to instance scope per directory [67.25ms]
+(pass) Scheduler.register > global scope runs once across instances [60.88ms]
+
+test/bun.test.ts:
+(pass) BunProc registry configuration > should not contain hardcoded registry parameters [0.17ms]
+(pass) BunProc registry configuration > should use Bun's default registry resolution [0.07ms]
+(pass) BunProc registry configuration > should have correct command structure without registry [0.09ms]
+
+test/permission-task.test.ts:
+(pass) PermissionNext.evaluate for permission.task > returns ask when no match (default) [0.14ms]
+(pass) PermissionNext.evaluate for permission.task > returns deny for explicit deny [0.15ms]
+(pass) PermissionNext.evaluate for permission.task > returns allow for explicit allow
+(pass) PermissionNext.evaluate for permission.task > returns ask for explicit ask [0.07ms]
+(pass) PermissionNext.evaluate for permission.task > matches wildcard patterns with deny [0.05ms]
+(pass) PermissionNext.evaluate for permission.task > matches wildcard patterns with allow [0.04ms]
+(pass) PermissionNext.evaluate for permission.task > matches wildcard patterns with ask [0.05ms]
+(pass) PermissionNext.evaluate for permission.task > later rules take precedence (last match wins) [0.04ms]
+(pass) PermissionNext.evaluate for permission.task > matches global wildcard [0.60ms]
+(pass) PermissionNext.disabled for task tool > task tool is disabled when global deny pattern exists (even with specific allows) [0.18ms]
+(pass) PermissionNext.disabled for task tool > task tool is disabled when global deny pattern exists (even with ask overrides) [0.02ms]
+(pass) PermissionNext.disabled for task tool > task tool is disabled when global deny pattern exists
+(pass) PermissionNext.disabled for task tool > task tool is NOT disabled when only specific patterns are denied (no wildcard)
+(pass) PermissionNext.disabled for task tool > task tool is enabled when no task rules exist (default ask)
+(pass) PermissionNext.disabled for task tool > task tool is NOT disabled when last wildcard pattern is allow
+(pass) permission.task with real config files > loads task permissions from opencode.json config [41.19ms]
+(pass) permission.task with real config files > loads task permissions with wildcard patterns from config [39.32ms]
+(pass) permission.task with real config files > evaluate respects task permission from config [31.71ms]
+(pass) permission.task with real config files > mixed permission config with task and other tools [31.33ms]
+(pass) permission.task with real config files > task tool disabled when global deny comes last in config [31.48ms]
+(pass) permission.task with real config files > task tool NOT disabled when specific allow comes last in config [31.22ms]
+
+test/keybind.test.ts:
+(pass) Keybind.toString > should convert simple key to string [0.18ms]
+(pass) Keybind.toString > should convert ctrl modifier to string
+(pass) Keybind.toString > should convert leader key to string [0.01ms]
+(pass) Keybind.toString > should convert multiple modifiers to string [0.01ms]
+(pass) Keybind.toString > should convert all modifiers to string
+(pass) Keybind.toString > should convert shift modifier to string
+(pass) Keybind.toString > should convert function key to string [0.03ms]
+(pass) Keybind.toString > should convert special key to string [0.01ms]
+(pass) Keybind.toString > should handle empty name [0.01ms]
+(pass) Keybind.toString > should handle only modifiers
+(pass) Keybind.toString > should handle only leader with no other parts
+(pass) Keybind.toString > should convert super modifier to string
+(pass) Keybind.toString > should convert super+shift modifier to string
+(pass) Keybind.toString > should handle super with ctrl modifier
+(pass) Keybind.toString > should handle super with all modifiers
+(pass) Keybind.toString > should handle undefined super field (omitted)
+(pass) Keybind.match > should match identical keybinds
+(pass) Keybind.match > should not match different key names
+(pass) Keybind.match > should not match different modifiers
+(pass) Keybind.match > should match leader keybinds
+(pass) Keybind.match > should not match leader vs non-leader [0.01ms]
+(pass) Keybind.match > should match complex keybinds [0.02ms]
+(pass) Keybind.match > should not match with one modifier different
+(pass) Keybind.match > should match simple key without modifiers
+(pass) Keybind.match > should match super modifier keybinds
+(pass) Keybind.match > should not match super vs non-super
+(pass) Keybind.match > should match undefined super with false super
+(pass) Keybind.match > should match super+shift combination [0.10ms]
+(pass) Keybind.match > should not match when only super differs
+(pass) Keybind.parse > should parse simple key
+(pass) Keybind.parse > should parse leader key syntax
+(pass) Keybind.parse > should parse ctrl modifier
+(pass) Keybind.parse > should parse multiple modifiers
+(pass) Keybind.parse > should parse shift modifier
+(pass) Keybind.parse > should parse meta/alt modifier
+(pass) Keybind.parse > should parse leader with modifier
+(pass) Keybind.parse > should parse multiple keybinds separated by comma
+(pass) Keybind.parse > should parse shift+return combination
+(pass) Keybind.parse > should parse ctrl+j combination
+(pass) Keybind.parse > should handle 'none' value
+(pass) Keybind.parse > should handle special keys [0.24ms]
+(pass) Keybind.parse > should handle function keys
+(pass) Keybind.parse > should handle complex multi-modifier combination [0.02ms]
+(pass) Keybind.parse > should be case insensitive
+(pass) Keybind.parse > should parse super modifier
+(pass) Keybind.parse > should parse super with shift modifier
+(pass) Keybind.parse > should parse multiple keybinds with super
+
+test/ide/ide.test.ts:
+(pass) ide > should detect Visual Studio Code [0.20ms]
+(pass) ide > should detect Visual Studio Code Insiders
+(pass) ide > should detect Cursor [0.06ms]
+(pass) ide > should detect VSCodium
+(pass) ide > should detect Windsurf
+(pass) ide > should return unknown when TERM_PROGRAM is not vscode
+(pass) ide > should return unknown when GIT_ASKPASS does not contain IDE name
+(pass) ide > should recognize vscode-insiders OPENCODE_CALLER [0.08ms]
+(pass) ide > should recognize vscode OPENCODE_CALLER
+(pass) ide > should return false for unknown OPENCODE_CALLER
+
+test/snapshot/snapshot.test.ts:
+(pass) tracks deleted files correctly [79.57ms]
+(pass) revert should remove new files [87.13ms]
+(pass) revert in subdirectory [87.75ms]
+(pass) multiple file operations [105.48ms]
+(pass) empty directory handling [78.56ms]
+(pass) binary file handling [95.28ms]
+(pass) symlink handling [89.03ms]
+(pass) large file handling [91.34ms]
+(pass) nested directory revert [97.37ms]
+(pass) special characters in filenames [78.75ms]
+(pass) revert with empty patches [46.42ms]
+(pass) patch with invalid hash [76.35ms]
+(pass) revert non-existent file [75.96ms]
+(pass) unicode filenames [106.69ms]
+(skip) unicode filenames modification and restore
+(pass) unicode filenames in subdirectories [83.52ms]
+(pass) very long filenames [83.48ms]
+(pass) hidden files [76.74ms]
+(pass) nested symlinks [81.21ms]
+(pass) file permissions and ownership changes [78.56ms]
+(pass) circular symlinks [78.33ms]
+(pass) gitignore changes [76.68ms]
+(pass) concurrent file operations during patch [90.47ms]
+(pass) snapshot state isolation between projects [154.92ms]
+(pass) patch detects changes in secondary worktree [112.19ms]
+(pass) revert only removes files in invoking worktree [120.85ms]
+(pass) diff reports worktree-only/shared edits and ignores primary-only [114.66ms]
+(pass) track with no changes returns same hash [84.71ms]
+(pass) diff function with various changes [77.56ms]
+(pass) restore function [77.96ms]
+(pass) revert should not delete files that existed but were deleted in snapshot [93.28ms]
+(pass) revert preserves file that existed in snapshot when deleted then recreated [88.59ms]
+(pass) diffFull sets status based on git change type [150.23ms]
+(pass) diffFull with new file additions [98.67ms]
+(pass) diffFull with file modifications [96.52ms]
+(pass) diffFull with file deletions [93.21ms]
+(pass) diffFull with multiple line additions [95.02ms]
+(pass) diffFull with addition and deletion [121.36ms]
+(pass) diffFull with multiple additions and deletions [134.56ms]
+(pass) diffFull with no changes [96.73ms]
+(pass) diffFull with binary file changes [97.70ms]
+(pass) diffFull with whitespace changes [118.65ms]
+
+test/memory/abort-leak.test.ts:
+Baseline: 14.14 MB
+After 50 fetches: 14.10 MB
+Growth: -0.04 MB
+(pass) memory: abort controller leak > webfetch does not leak memory over many invocations [1080.34ms]
+OLD pattern (closure): 8.35 MB growth (500 closures)
+NEW pattern (bind): 0.00 MB growth
+Improvement: 8.35 MB saved
+(pass) memory: abort controller leak > compare closure vs bind pattern directly [513.55ms]
+
+test/skill/discovery.test.ts:
+(pass) Discovery.pull > downloads skills from cloudflare url [1761.35ms]
+(pass) Discovery.pull > url without trailing slash works [44.71ms]
+(pass) Discovery.pull > returns empty array for invalid url [4.20ms]
+(pass) Discovery.pull > returns empty array for non-json response [19.67ms]
+(pass) Discovery.pull > downloads reference files alongside SKILL.md [41.88ms]
+(pass) Discovery.pull > caches downloaded files on second pull [81.89ms]
+
+test/skill/skill.test.ts:
+(pass) discovers skills from .opencode/skill/ directory [40.66ms]
+(pass) returns skill directories from Skill.dirs [35.59ms]
+(pass) discovers multiple skills from .opencode/skill/ directory [34.54ms]
+(pass) skips skills with missing frontmatter [37.28ms]
+(pass) discovers skills from .claude/skills/ directory [33.85ms]
+(pass) discovers global skills from ~/.claude/skills/ directory [33.43ms]
+(pass) returns empty array when no skills exist [33.09ms]
+(pass) discovers skills from .agents/skills/ directory [33.86ms]
+(pass) discovers global skills from ~/.agents/skills/ directory [37.32ms]
+(pass) discovers skills from both .claude/skills/ and .agents/skills/ [42.11ms]
+(pass) properly resolves directories that skills live in [46.25ms]
+
+test/util/iife.test.ts:
+(pass) util.iife > should execute function immediately and return result [0.03ms]
+(pass) util.iife > should work with async functions [0.05ms]
+(pass) util.iife > should handle functions with no return value
+
+test/util/timeout.test.ts:
+(pass) util.timeout > should resolve when promise completes before timeout [10.50ms]
+(pass) util.timeout > should reject when promise exceeds timeout [50.85ms]
+
+test/util/format.test.ts:
+(pass) util.format > formatDuration > returns empty string for zero or negative values [0.05ms]
+(pass) util.format > formatDuration > formats seconds under a minute [0.03ms]
+(pass) util.format > formatDuration > formats minutes under an hour [0.03ms]
+(pass) util.format > formatDuration > formats hours under a day [0.02ms]
+(pass) util.format > formatDuration > formats days under a week
+(pass) util.format > formatDuration > formats weeks
+(pass) util.format > formatDuration > handles boundary values correctly
+
+test/util/lock.test.ts:
+(pass) util.lock > writer exclusivity: blocks reads and other writes while held [0.40ms]
+
+test/util/wildcard.test.ts:
+(pass) match handles glob tokens [0.66ms]
+(pass) match with trailing space+wildcard matches command with or without args
+(pass) all picks the most specific pattern [0.33ms]
+(pass) allStructured matches command sequences [0.09ms]
+(pass) allStructured prioritizes flag-specific patterns [0.13ms]
+(pass) allStructured handles sed flags [0.03ms]
+
+test/util/lazy.test.ts:
+(pass) util.lazy > should call function only once [0.04ms]
+(pass) util.lazy > should preserve the same reference
+(pass) util.lazy > should work with different return types
+
+test/util/filesystem.test.ts:
+(pass) util.filesystem > exists() is true for files and directories [0.86ms]
+(pass) util.filesystem > isDir() is true only for directories [0.65ms]
+
+test/file/path-traversal.test.ts:
+(pass) Filesystem.contains > allows paths within project
+(pass) Filesystem.contains > blocks ../ traversal
+(pass) Filesystem.contains > blocks absolute paths outside project
+(pass) Filesystem.contains > handles prefix collision edge cases
+(pass) Filesystem.contains > blocks symlink escapes when target exists outside project [0.96ms]
+(pass) File.read path traversal protection > rejects ../ traversal attempting to read /etc/passwd [0.97ms]
+(pass) File.read path traversal protection > rejects deeply nested traversal [0.99ms]
+(pass) File.read path traversal protection > allows valid paths within project [0.71ms]
+(pass) File.read path traversal protection > rejects symlink that resolves outside project [0.87ms]
+(pass) File.read path traversal protection > preserves leading/trailing whitespace and trailing newlines [0.63ms]
+(pass) File.list path traversal protection > rejects ../ traversal attempting to list /etc [0.60ms]
+(pass) File.list path traversal protection > allows valid subdirectory listing [0.66ms]
+(pass) Instance.containsPath > returns true for path inside directory [38.71ms]
+(pass) Instance.containsPath > returns false for paths outside directory when running from monorepo subdirectory [38.35ms]
+(pass) Instance.containsPath > returns false for path outside both directory and worktree [34.04ms]
+(pass) Instance.containsPath > returns false for path with .. escaping worktree [31.62ms]
+(pass) Instance.containsPath > handles directory === worktree (running from repo root) [32.72ms]
+(pass) Instance.containsPath > non-git project does not allow arbitrary paths via worktree='/' [0.72ms]
+(pass) File.status > reports repo-relative paths and accurate line counts for untracked files [59.05ms]
+
+test/file/ignore.test.ts:
+(pass) match nested and non-nested [0.12ms]
+
+test/file/ripgrep.test.ts:
+(pass) file.ripgrep > defaults to include hidden [7.69ms]
+(pass) file.ripgrep > hidden false excludes hidden [5.64ms]
+
+test/config/markdown.test.ts:
+(pass) ConfigMarkdown: normal template > should extract exactly 12 file references [0.04ms]
+(pass) ConfigMarkdown: normal template > should extract valid/path/to/a/file
+(pass) ConfigMarkdown: normal template > should extract another-valid/path/to/a/file
+(pass) ConfigMarkdown: normal template > should extract paths ignoring comma after
+(pass) ConfigMarkdown: normal template > should extract a path with a file extension and comma after
+(pass) ConfigMarkdown: normal template > should extract a path with multiple dots and comma after
+(pass) ConfigMarkdown: normal template > should extract hidden directory
+(pass) ConfigMarkdown: normal template > should extract hidden file
+(pass) ConfigMarkdown: normal template > should extract a file ignoring period at end of sentence
+(pass) ConfigMarkdown: normal template > should extract an absolute path with an extension
+(pass) ConfigMarkdown: normal template > should extract an absolute path without an extension
+(pass) ConfigMarkdown: normal template > should extract an absolute path in home directory
+(pass) ConfigMarkdown: normal template > should extract an absolute path under home directory
+(pass) ConfigMarkdown: normal template > should not match when preceded by backtick
+(pass) ConfigMarkdown: normal template > should not match email addresses [0.14ms]
+(pass) ConfigMarkdown: frontmatter parsing > should parse without throwing
+(pass) ConfigMarkdown: frontmatter parsing > should extract description field [0.02ms]
+(pass) ConfigMarkdown: frontmatter parsing > should extract occupation field with colon in value
+(pass) ConfigMarkdown: frontmatter parsing > should extract title field with single quotes
+(pass) ConfigMarkdown: frontmatter parsing > should extract name field with embedded quotes
+(pass) ConfigMarkdown: frontmatter parsing > should extract family field with embedded single quotes
+(pass) ConfigMarkdown: frontmatter parsing > should extract multiline summary field
+(pass) ConfigMarkdown: frontmatter parsing > should not include commented fields in data [0.04ms]
+(pass) ConfigMarkdown: frontmatter parsing > should extract URL with port
+(pass) ConfigMarkdown: frontmatter parsing > should extract time with colons
+(pass) ConfigMarkdown: frontmatter parsing > should extract value with multiple colons
+(pass) ConfigMarkdown: frontmatter parsing > should preserve already double-quoted values with colons
+(pass) ConfigMarkdown: frontmatter parsing > should preserve already single-quoted values with colons
+(pass) ConfigMarkdown: frontmatter parsing > should extract value with quotes and colons mixed
+(pass) ConfigMarkdown: frontmatter parsing > should handle empty values [0.02ms]
+(pass) ConfigMarkdown: frontmatter parsing > should handle dollar sign replacement patterns literally
+(pass) ConfigMarkdown: frontmatter parsing > should not parse fake yaml from content
+(pass) ConfigMarkdown: frontmatter parsing > should extract content after frontmatter without modification [0.02ms]
+(pass) ConfigMarkdown: frontmatter parsing w/ empty frontmatter > should parse without throwing
+(pass) ConfigMarkdown: frontmatter parsing w/ no frontmatter > should parse without throwing
+(pass) ConfigMarkdown: frontmatter parsing w/ Markdown header > should parse and match [0.02ms]
+(pass) ConfigMarkdown: frontmatter has weird model id > should parse and match
+
+test/config/agent-color.test.ts:
+(pass) agent color parsed from project config [5.35ms]
+(pass) Agent.get includes color from config [2.71ms]
+(pass) Color.hexToAnsiBold converts valid hex to ANSI [0.07ms]
+(pass) Color.hexToAnsiBold returns undefined for invalid hex [0.03ms]
+
+test/config/config.test.ts:
+(pass) loads config with defaults when no files exist [2.09ms]
+(pass) loads JSON config file [2.95ms]
+(pass) loads opencontext.json config file [4.74ms]
+(pass) loads JSONC config file [4.92ms]
+(pass) merges multiple config files with correct precedence [3.47ms]
+(pass) handles environment variable substitution [2.91ms]
+(pass) preserves env variables when adding $schema to config [4.02ms]
+(pass) handles file inclusion substitution [5.59ms]
+(pass) handles file inclusion with replacement tokens [2.87ms]
+(pass) validates config schema and throws on invalid fields [2.71ms]
+(pass) throws error for invalid JSON [1.85ms]
+(pass) handles agent configuration [3.46ms]
+(pass) treats agent variant as model-scoped setting (not provider option) [3.45ms]
+(pass) handles command configuration [4.78ms]
+(pass) migrates autoshare to share field [2.70ms]
+(pass) migrates mode field to agent field [3.60ms]
+(pass) loads config from .opencode directory [5.21ms]
+(pass) loads agents from .opencode/agents (plural) [7.01ms]
+(pass) loads commands from .opencode/command (singular) [2.98ms]
+(pass) loads commands from .opencode/commands (plural) [3.30ms]
+(pass) updates config and writes to file [1.77ms]
+(pass) gets config directories [2.25ms]
+(pass) does not try to install dependencies in read-only OPENCODE_CONFIG_DIR [5.15ms]
+(pass) installs dependencies in writable OPENCODE_CONFIG_DIR [3031.35ms]
+(pass) resolves scoped npm plugins in config [4.32ms]
+(pass) merges plugin arrays from global and local configs [4.39ms]
+(pass) does not error when only custom agent is a subagent [2.17ms]
+(pass) merges instructions arrays from global and local configs [4.30ms]
+(pass) deduplicates duplicate instructions from global and local configs [3.59ms]
+(pass) deduplicates duplicate plugins from global and local configs [3.45ms]
+(pass) migrates legacy tools config to permissions - allow [2.28ms]
+(pass) migrates legacy tools config to permissions - deny [2.30ms]
+(pass) migrates legacy write tool to edit permission [4.06ms]
+(pass) managed settings override user settings [4.11ms]
+(pass) managed settings override project settings [2.91ms]
+(pass) missing managed settings file is not an error [2.62ms]
+(pass) migrates legacy edit tool to edit permission [2.45ms]
+(pass) migrates legacy patch tool to edit permission [2.88ms]
+(pass) migrates legacy multiedit tool to edit permission [4.92ms]
+(pass) migrates mixed legacy tools config [3.83ms]
+(pass) merges legacy tools with existing permission config [3.07ms]
+(pass) permission config preserves key order [3.44ms]
+(pass) project config can override MCP server enabled status [3.47ms]
+(pass) MCP config deep merges preserving base config properties [5.06ms]
+(pass) local .opencode config can override MCP from project config [3.90ms]
+(pass) project config overrides remote well-known config [38.36ms]
+(pass) getPluginName > extracts name from file:// URL [0.07ms]
+(pass) getPluginName > extracts name from npm package with version [0.04ms]
+(pass) getPluginName > extracts name from scoped npm package [0.03ms]
+(pass) getPluginName > returns full string for package without version [0.02ms]
+(pass) deduplicatePlugins > removes duplicates keeping higher priority (later entries) [0.05ms]
+(pass) deduplicatePlugins > prefers local file over npm package with same name [0.03ms]
+(pass) deduplicatePlugins > preserves order of remaining plugins [0.03ms]
+(pass) deduplicatePlugins > local plugin directory overrides global opencode.json plugin [2.22ms]
+(pass) OPENCODE_DISABLE_PROJECT_CONFIG > skips project config files when flag is set [1.43ms]
+(pass) OPENCODE_DISABLE_PROJECT_CONFIG > skips project .opencode/ directories when flag is set [2.29ms]
+(pass) OPENCODE_DISABLE_PROJECT_CONFIG > still loads global config when flag is set [4.50ms]
+(pass) OPENCODE_DISABLE_PROJECT_CONFIG > skips relative instructions with warning when flag is set but no config dir [4.25ms]
+(pass) OPENCODE_DISABLE_PROJECT_CONFIG > OPENCODE_CONFIG_DIR still works when flag is set [4.36ms]
+
+test/plugin/auth-override.test.ts:
+(pass) plugin.auth-override > user plugin overrides built-in github-copilot auth [3855.91ms]
+
+test/plugin/codex.test.ts:
+(pass) plugin.codex > parseJwtClaims > parses valid JWT with claims [0.25ms]
+(pass) plugin.codex > parseJwtClaims > returns undefined for JWT with less than 3 parts
+(pass) plugin.codex > parseJwtClaims > returns undefined for invalid base64 [0.06ms]
+(pass) plugin.codex > parseJwtClaims > returns undefined for invalid JSON payload
+(pass) plugin.codex > extractAccountIdFromClaims > extracts chatgpt_account_id from root
+(pass) plugin.codex > extractAccountIdFromClaims > extracts chatgpt_account_id from nested https://api.openai.com/auth
+(pass) plugin.codex > extractAccountIdFromClaims > prefers root over nested
+(pass) plugin.codex > extractAccountIdFromClaims > extracts from organizations array as fallback
+(pass) plugin.codex > extractAccountIdFromClaims > returns undefined when no accountId found [0.13ms]
+(pass) plugin.codex > extractAccountId > extracts from id_token first [0.03ms]
+(pass) plugin.codex > extractAccountId > falls back to access_token when id_token has no accountId
+(pass) plugin.codex > extractAccountId > returns undefined when no tokens have accountId
+(pass) plugin.codex > extractAccountId > handles missing id_token
+
+test/provider/transform.test.ts:
+(pass) ProviderTransform.options - setCacheKey > should set promptCacheKey when providerOptions.setCacheKey is true [0.08ms]
+(pass) ProviderTransform.options - setCacheKey > should not set promptCacheKey when providerOptions.setCacheKey is false
+(pass) ProviderTransform.options - setCacheKey > should not set promptCacheKey when providerOptions is undefined
+(pass) ProviderTransform.options - setCacheKey > should not set promptCacheKey when providerOptions does not have setCacheKey
+(pass) ProviderTransform.options - setCacheKey > should set promptCacheKey for openai provider regardless of setCacheKey
+(pass) ProviderTransform.options - setCacheKey > should set store=false for openai provider
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.2 should have textVerbosity set to low
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.1 should have textVerbosity set to low
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.2-chat-latest should NOT have textVerbosity set (only supports medium)
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.1-chat-latest should NOT have textVerbosity set (only supports medium)
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.2-chat should NOT have textVerbosity set
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5-chat should NOT have textVerbosity set
+(pass) ProviderTransform.options - gpt-5 textVerbosity > gpt-5.2-codex should NOT have textVerbosity set (codex models excluded)
+(pass) ProviderTransform.maxOutputTokens > returns 32k when modelLimit > 32k
+(pass) ProviderTransform.maxOutputTokens > returns modelLimit when modelLimit < 32k
+(pass) ProviderTransform.maxOutputTokens > azure > returns 32k when modelLimit > 32k
+(pass) ProviderTransform.maxOutputTokens > azure > returns modelLimit when modelLimit < 32k
+(pass) ProviderTransform.maxOutputTokens > bedrock > returns 32k when modelLimit > 32k
+(pass) ProviderTransform.maxOutputTokens > bedrock > returns modelLimit when modelLimit < 32k
+(pass) ProviderTransform.maxOutputTokens > anthropic without thinking options > returns 32k when modelLimit > 32k
+(pass) ProviderTransform.maxOutputTokens > anthropic without thinking options > returns modelLimit when modelLimit < 32k
+(pass) ProviderTransform.maxOutputTokens > anthropic with thinking options > returns 32k when budgetTokens + 32k <= modelLimit
+(pass) ProviderTransform.maxOutputTokens > anthropic with thinking options > returns modelLimit - budgetTokens when budgetTokens + 32k > modelLimit
+(pass) ProviderTransform.maxOutputTokens > anthropic with thinking options > returns 32k when thinking type is not enabled
+(pass) ProviderTransform.schema - gemini array items > adds missing items for array properties
+(pass) ProviderTransform.schema - gemini nested array items > adds type to 2D array with empty inner items [0.63ms]
+(pass) ProviderTransform.schema - gemini nested array items > adds items and type to 2D array with missing inner items [0.01ms]
+(pass) ProviderTransform.schema - gemini nested array items > handles deeply nested arrays (3D)
+(pass) ProviderTransform.schema - gemini nested array items > preserves existing item types in nested arrays
+(pass) ProviderTransform.schema - gemini nested array items > handles mixed nested structures with objects and arrays [0.09ms]
+(pass) ProviderTransform.schema - gemini non-object properties removal > removes properties from non-object types
+(pass) ProviderTransform.schema - gemini non-object properties removal > removes required from non-object types
+(pass) ProviderTransform.schema - gemini non-object properties removal > removes properties and required from nested non-object types
+(pass) ProviderTransform.schema - gemini non-object properties removal > keeps properties and required on object types [0.13ms]
+(pass) ProviderTransform.schema - gemini non-object properties removal > does not affect non-gemini providers
+(pass) ProviderTransform.message - DeepSeek reasoning content > DeepSeek with tool calls includes reasoning_content in providerOptions [0.29ms]
+(pass) ProviderTransform.message - DeepSeek reasoning content > Non-DeepSeek providers leave reasoning content unchanged [0.01ms]
+(pass) ProviderTransform.message - empty image handling > should replace empty base64 image with error text
+(pass) ProviderTransform.message - empty image handling > should keep valid base64 images unchanged [0.32ms]
+(pass) ProviderTransform.message - empty image handling > should handle mixed valid and empty images
+(pass) ProviderTransform.message - anthropic empty content filtering > filters out messages with empty string content
+(pass) ProviderTransform.message - anthropic empty content filtering > filters out empty text parts from array content
+(pass) ProviderTransform.message - anthropic empty content filtering > filters out empty reasoning parts from array content
+(pass) ProviderTransform.message - anthropic empty content filtering > removes entire message when all parts are empty
+(pass) ProviderTransform.message - anthropic empty content filtering > keeps non-text/reasoning parts even if text parts are empty
+(pass) ProviderTransform.message - anthropic empty content filtering > keeps messages with valid text alongside empty parts
+(pass) ProviderTransform.message - anthropic empty content filtering > does not filter for non-anthropic providers
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves itemId and reasoningEncryptedContent when store=false
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves itemId and reasoningEncryptedContent when store=false even when not openai [0.05ms]
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves other openai options including itemId
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves metadata for openai package when store is true
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves metadata for non-openai packages when store is false
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves metadata using providerID key when store is false
+(pass) ProviderTransform.message - strip openai metadata when store=false > preserves itemId across all providerOptions keys
+(pass) ProviderTransform.message - strip openai metadata when store=false > does not strip metadata for non-openai packages when store is not false
+(pass) ProviderTransform.message - providerOptions key remapping > azure keeps 'azure' key and does not remap to 'openai'
+(pass) ProviderTransform.message - providerOptions key remapping > copilot remaps providerID to 'copilot' key
+(pass) ProviderTransform.message - providerOptions key remapping > bedrock remaps providerID to 'bedrock' key
+(pass) ProviderTransform.message - claude w/bedrock custom inference profile > adds cachePoint [0.34ms]
+(pass) ProviderTransform.variants > returns empty object when model has no reasoning capabilities
+(pass) ProviderTransform.variants > deepseek returns empty object
+(pass) ProviderTransform.variants > minimax returns empty object
+(pass) ProviderTransform.variants > glm returns empty object
+(pass) ProviderTransform.variants > mistral returns empty object
+(pass) ProviderTransform.variants > @openrouter/ai-sdk-provider > returns empty object for non-qualifying models
+(pass) ProviderTransform.variants > @openrouter/ai-sdk-provider > gpt models return OPENAI_EFFORTS with reasoning
+(pass) ProviderTransform.variants > @openrouter/ai-sdk-provider > gemini-3 returns OPENAI_EFFORTS with reasoning
+(pass) ProviderTransform.variants > @openrouter/ai-sdk-provider > grok-4 returns empty object
+(pass) ProviderTransform.variants > @openrouter/ai-sdk-provider > grok-3-mini returns low and high with reasoning
+(pass) ProviderTransform.variants > @ai-sdk/gateway > returns OPENAI_EFFORTS with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > standard models return low, medium, high
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > gpt-5.1-codex-max includes xhigh
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > gpt-5.1-codex-mini does not include xhigh
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > gpt-5.1-codex does not include xhigh
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > gpt-5.2 includes xhigh
+(pass) ProviderTransform.variants > @ai-sdk/github-copilot > gpt-5.2-codex includes xhigh
+(pass) ProviderTransform.variants > @ai-sdk/cerebras > returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/togetherai > returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/xai > grok-3 returns empty object
+(pass) ProviderTransform.variants > @ai-sdk/xai > grok-3-mini returns low and high with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/deepinfra > returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/openai-compatible > returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort
+(pass) ProviderTransform.variants > @ai-sdk/azure > o1-mini returns empty object
+(pass) ProviderTransform.variants > @ai-sdk/azure > standard azure models return custom efforts with reasoningSummary
+(pass) ProviderTransform.variants > @ai-sdk/azure > gpt-5 adds minimal effort
+(pass) ProviderTransform.variants > @ai-sdk/openai > gpt-5-pro returns empty object
+(pass) ProviderTransform.variants > @ai-sdk/openai > standard openai models return custom efforts with reasoningSummary
+(pass) ProviderTransform.variants > @ai-sdk/openai > models after 2025-11-13 include 'none' effort
+(pass) ProviderTransform.variants > @ai-sdk/openai > models after 2025-12-04 include 'xhigh' effort
+(pass) ProviderTransform.variants > @ai-sdk/anthropic > returns high and max with thinking config
+(pass) ProviderTransform.variants > @ai-sdk/amazon-bedrock > returns WIDELY_SUPPORTED_EFFORTS with reasoningConfig
+(pass) ProviderTransform.variants > @ai-sdk/google > gemini-2.5 returns high and max with thinkingConfig and thinkingBudget
+(pass) ProviderTransform.variants > @ai-sdk/google > other gemini models return low and high with thinkingLevel [0.98ms]
+(pass) ProviderTransform.variants > @ai-sdk/google-vertex > gemini-2.5 returns high and max with thinkingConfig and thinkingBudget
+(pass) ProviderTransform.variants > @ai-sdk/google-vertex > other vertex models return low and high with thinkingLevel
+(pass) ProviderTransform.variants > @ai-sdk/cohere > returns empty object
+(pass) ProviderTransform.variants > @ai-sdk/groq > returns none and WIDELY_SUPPORTED_EFFORTS with thinkingLevel
+(pass) ProviderTransform.variants > @ai-sdk/perplexity > returns empty object
+
+test/provider/provider.test.ts:
+(pass) provider loaded from env variable [14.51ms]
+(pass) provider loaded from config with apiKey option [7.86ms]
+(pass) disabled_providers excludes provider [4.44ms]
+(pass) enabled_providers restricts to only listed providers [4.94ms]
+(pass) model whitelist filters models for provider [4.05ms]
+(pass) model blacklist excludes specific models [6.16ms]
+(pass) custom model alias via config [5.20ms]
+(pass) custom provider with npm package [4.06ms]
+(pass) env variable takes precedence, config merges options [4.84ms]
+(pass) getModel returns model for valid provider/model [6.88ms]
+(pass) getModel throws ModelNotFoundError for invalid model [4.37ms]
+(pass) getModel throws ModelNotFoundError for invalid provider [4.06ms]
+(pass) parseModel correctly parses provider/model string
+(pass) parseModel handles model IDs with slashes
+(pass) defaultModel returns first available model when no config set [6.96ms]
+(pass) defaultModel respects config model setting [2.10ms]
+(pass) provider with baseURL from config [4.30ms]
+(pass) model cost defaults to zero when not specified [5.22ms]
+(pass) model options are merged from existing model [7.78ms]
+(pass) provider removed when all models filtered out [4.96ms]
+(pass) closest finds model by partial match [5.15ms]
+(pass) closest returns undefined for nonexistent provider [7.57ms]
+(pass) getModel uses realIdByKey for aliased models [5.25ms]
+(pass) provider api field sets model api.url [5.93ms]
+(pass) explicit baseURL overrides api field [7.05ms]
+(pass) model inherits properties from existing database model [4.78ms]
+(pass) disabled_providers prevents loading even with env var [4.35ms]
+(pass) enabled_providers with empty array allows no providers [6.15ms]
+(pass) whitelist and blacklist can be combined [4.61ms]
+(pass) model modalities default correctly [5.35ms]
+(pass) model with custom cost values [7.47ms]
+(pass) getSmallModel returns appropriate small model [4.20ms]
+(pass) getSmallModel respects config small_model override [3.77ms]
+(pass) provider.sort prioritizes preferred models [0.09ms]
+(pass) multiple providers can be configured simultaneously [7.41ms]
+(pass) provider with custom npm package [4.91ms]
+(pass) model alias name defaults to alias key when id differs [4.60ms]
+(pass) provider with multiple env var options only includes apiKey when single env [6.97ms]
+(pass) provider with single env var includes apiKey automatically [4.40ms]
+(pass) model cost overrides existing cost values [3.95ms]
+(pass) completely new provider not in database can be configured [4.84ms]
+(pass) disabled_providers and enabled_providers interaction [6.41ms]
+(pass) model with tool_call false [4.39ms]
+(pass) model defaults tool_call to true when not specified [3.93ms]
+(pass) model headers are preserved [7.36ms]
+(pass) provider env fallback - second env var used if first missing [4.67ms]
+(pass) getModel returns consistent results [4.24ms]
+(pass) provider name defaults to id when not in database [5.75ms]
+(pass) ModelNotFoundError includes suggestions for typos [7.66ms]
+(pass) ModelNotFoundError for provider includes suggestions [4.05ms]
+(pass) getProvider returns undefined for nonexistent provider [4.05ms]
+(pass) getProvider returns provider info [7.17ms]
+(pass) closest returns undefined when no partial match found [4.43ms]
+(pass) closest checks multiple query terms in order [4.51ms]
+(pass) model limit defaults to zero when not specified [4.35ms]
+(pass) provider options are deeply merged [6.43ms]
+(pass) custom model inherits npm package from models.dev provider config [4.48ms]
+(pass) custom model inherits api.url from models.dev provider [4.70ms]
+(pass) model variants are generated for reasoning models [7.07ms]
+(pass) model variants can be disabled via config [4.39ms]
+(pass) model variants can be customized via config [4.95ms]
+(pass) disabled key is stripped from variant config [6.63ms]
+(pass) all variants can be disabled via config [4.37ms]
+(pass) variant config merges with generated variants [4.20ms]
+(pass) variants filtered in second pass for database models [5.30ms]
+(pass) custom model with variants enabled and disabled [6.36ms]
+
+test/provider/amazon-bedrock.test.ts:
+(pass) Bedrock: config region takes precedence over AWS_REGION env var [3561.36ms]
+(pass) Bedrock: falls back to AWS_REGION env var when no config region [417.73ms]
+(pass) Bedrock: loads when bearer token from auth.json is present [5.97ms]
+(pass) Bedrock: config profile takes precedence over AWS_PROFILE env var [3.90ms]
+(pass) Bedrock: includes custom endpoint in options when specified [4.66ms]
+(pass) Bedrock: autoloads when AWS_WEB_IDENTITY_TOKEN_FILE is present [7.02ms]
+(pass) Bedrock: model with us. prefix should not be double-prefixed [4.11ms]
+(pass) Bedrock: model with global. prefix should not be prefixed [3.52ms]
+(pass) Bedrock: model with eu. prefix should not be double-prefixed [3.93ms]
+(pass) Bedrock: model without prefix in US region should get us. prefix added [4.26ms]
+(pass) Bedrock cross-region prefix detection > should detect global. prefix
+(pass) Bedrock cross-region prefix detection > should detect us. prefix [0.08ms]
+(pass) Bedrock cross-region prefix detection > should detect eu. prefix [0.02ms]
+(pass) Bedrock cross-region prefix detection > should detect jp. prefix [0.02ms]
+(pass) Bedrock cross-region prefix detection > should detect apac. prefix
+(pass) Bedrock cross-region prefix detection > should detect au. prefix
+(pass) Bedrock cross-region prefix detection > should NOT detect prefix for non-prefixed model
+(pass) Bedrock cross-region prefix detection > should NOT detect prefix for amazon nova models
+(pass) Bedrock cross-region prefix detection > should NOT detect prefix for cohere models
+
+test/provider/gitlab-duo.test.ts:
+(pass) GitLab Duo: loads provider with API key from environment [4.84ms]
+(pass) GitLab Duo: config instanceUrl option sets baseURL [4.43ms]
+(pass) GitLab Duo: loads with OAuth token from auth.json [5.06ms]
+(pass) GitLab Duo: loads with Personal Access Token from auth.json [7.11ms]
+(pass) GitLab Duo: supports self-hosted instance configuration [4.44ms]
+(pass) GitLab Duo: config apiKey takes precedence over environment variable [4.31ms]
+(pass) GitLab Duo: supports feature flags configuration [7.02ms]
+(pass) GitLab Duo: has multiple agentic chat models available [4.89ms]
+
+test/server/session-list.test.ts:
+(pass) session.list > filters by directory [30.27ms]
+
+test/server/session-select.test.ts:
+(pass) tui.selectSession endpoint > should return 200 when called with valid session [1.81ms]
+(pass) tui.selectSession endpoint > should return 404 when session does not exist [0.38ms]
+(pass) tui.selectSession endpoint > should return 400 when session ID format is invalid [0.27ms]
+
+test/lsp/client.test.ts:
+(pass) LSPClient interop > handles workspace/workspaceFolders request [247.03ms]
+(pass) LSPClient interop > handles client/registerCapability request [219.29ms]
+(pass) LSPClient interop > handles client/unregisterCapability request [230.61ms]
+
+test/agent/companion-agent.test.ts:
+(pass) companion agent appears in agent list [8.36ms]
+(pass) companion agent has correct properties [5.73ms]
+(pass) companion agent prompt file loads without errors [10.26ms]
+
+test/agent/companion-session-selection.test.ts:
+(pass) companion.session-selection getAvailableSessions > returns empty array when index is empty [5.59ms]
+(pass) companion.session-selection getAvailableSessions > returns sessions from index with metadata [5.98ms]
+(pass) companion.session-selection getAvailableSessions > returns multiple sessions sorted by lastModified [32.26ms]
+(pass) companion.session-selection getAvailableSessions > includes untitled draft sessions (title is null) [3.73ms]
+(pass) companion.session-selection getAvailableSessions > skips sessions in index that don't exist in Session.get [6.03ms]
+(pass) companion.session-selection createNewSession > creates new session via Session.create [5.46ms]
+(pass) companion.session-selection createNewSession > adds new session to index as untitled draft [3.78ms]
+(pass) companion.session-selection createNewSession > creates multiple independent sessions [5.04ms]
+(pass) companion.session-selection loadExistingSession > loads existing session by ID [6.23ms]
+(pass) companion.session-selection loadExistingSession > throws error when session doesn't exist [1.17ms]
+(pass) companion.session-selection loadExistingSession > loads session with full history [3.88ms]
+
+test/agent/companion-lifecycle.test.ts:
+(pass) complete lifecycle: start new session → add to index → title → verify index updated [6.17ms]
+(pass) complete lifecycle: start → select existing session → load → verify history [3.05ms]
+(pass) create multiple sessions → list → verify all appear sorted by lastModified [27.35ms]
+(pass) agent appears in opencontext agent list [1.94ms]
+(pass) untitled draft appears in session list with null title [3.18ms]
+(pass) loading existing session updates lastModified in index [13.86ms]
+(pass) multiple untitled drafts are sorted by lastModified [27.52ms]
+(pass) mixed titled and untitled sessions are sorted together by lastModified [26.21ms]
+
+test/agent/companion-cli-lifecycle.test.ts:
+(pass) CLI lifecycle: untitled session → suggestion accepted (simulated) [4.06ms]
+(pass) CLI lifecycle: untitled session → custom title entered [3.26ms]
+(pass) CLI lifecycle: cancel at confirm → session remains untitled [3.18ms]
+(pass) CLI lifecycle: cancel at custom title prompt → session remains untitled [3.66ms]
+(pass) CLI lifecycle: already titled session skips prompt [5.78ms]
+(pass) CLI lifecycle: metadata consistency after title apply [4.53ms]
+(pass) CLI lifecycle: multiple sessions with different title states [5.38ms]
+
+test/agent/companion-index.test.ts:
+(pass) companion.index readIndex > returns empty object when file doesn't exist [0.22ms]
+(pass) companion.index readIndex > returns parsed index when file exists [0.78ms]
+(pass) companion.index readIndex > returns empty object when file contains invalid JSON [0.71ms]
+(pass) companion.index writeIndex > creates directory if it doesn't exist [1.54ms]
+(pass) companion.index writeIndex > writes index atomically using temp file [0.63ms]
+(pass) companion.index writeIndex > overwrites existing index [0.97ms]
+(pass) companion.index addSession > adds new session to empty index [0.68ms]
+(pass) companion.index addSession > adds session with null title (draft) [0.69ms]
+(pass) companion.index addSession > updates existing session [12.74ms]
+(pass) companion.index addSession > preserves other sessions when adding new one [1.08ms]
+(pass) companion.index removeSession > removes existing session [1.02ms]
+(pass) companion.index removeSession > does nothing when session doesn't exist [0.63ms]
+(pass) companion.index removeSession > preserves other sessions when removing one [1.27ms]
+(pass) companion.index listSessions > returns empty array for empty index [0.08ms]
+(pass) companion.index listSessions > returns all sessions [0.88ms]
+(pass) companion.index listSessions > sorts sessions by lastModified descending (most recent first) [23.27ms]
+(pass) companion.index listSessions > includes both titled and untitled sessions [1.01ms]
+(pass) companion.index sanitizeTitle > converts to lowercase [0.04ms]
+(pass) companion.index sanitizeTitle > replaces spaces with hyphens [0.02ms]
+(pass) companion.index sanitizeTitle > removes special characters [0.02ms]
+(pass) companion.index sanitizeTitle > collapses multiple hyphens [0.02ms]
+(pass) companion.index sanitizeTitle > trims hyphens from edges [0.03ms]
+(pass) companion.index sanitizeTitle > limits to 50 characters [0.03ms]
+(pass) companion.index sanitizeTitle > returns 'session' for empty string [0.02ms]
+(pass) companion.index sanitizeTitle > returns 'session' when only special characters [0.03ms]
+(pass) companion.index sanitizeTitle > handles unicode characters [0.06ms]
+(pass) companion.index sanitizeTitle > handles mixed case with numbers [0.08ms]
+(pass) companion.index sanitizeTitle > preserves existing hyphens [0.02ms]
+
+test/agent/agent.test.ts:
+(pass) returns default native agents when no config [2.64ms]
+(pass) coding agent has correct default properties [1.37ms]
+(pass) build agent remains as hidden compatibility alias [1.54ms]
+(pass) plan agent denies edits except .opencode/plans/* [2.83ms]
+(pass) explore agent denies edit and write [4.01ms]
+(pass) general agent denies todo tools [4.05ms]
+(pass) compaction agent denies all permissions [5.18ms]
+(pass) custom agent from config creates new agent [4.19ms]
+(pass) custom agent config overrides native agent properties [4.69ms]
+(pass) agent disable removes agent from list [4.39ms]
+(pass) agent permission config merges with defaults [6.24ms]
+(pass) global permission config applies to all agents [4.64ms]
+(pass) agent steps/maxSteps config sets steps property [4.47ms]
+(pass) agent mode can be overridden [6.96ms]
+(pass) agent name can be overridden [4.96ms]
+(pass) agent prompt can be set from config [3.86ms]
+(pass) unknown agent properties are placed into options [4.12ms]
+(pass) agent options merge correctly [6.34ms]
+(pass) multiple custom agents can be defined [4.13ms]
+(pass) Agent.get returns undefined for non-existent agent [3.57ms]
+(pass) default permission includes doom_loop and external_directory as ask [3.67ms]
+(pass) webfetch is allowed by default [5.04ms]
+(pass) legacy tools config converts to permissions [4.59ms]
+(pass) legacy tools config maps write/edit/patch/multiedit to edit permission [4.31ms]
+(pass) Truncate.GLOB is allowed even when user denies external_directory globally [3.88ms]
+(pass) Truncate.GLOB is allowed even when user denies external_directory per-agent [5.21ms]
+(pass) explicit Truncate.GLOB deny is respected [3.07ms]
+(pass) skill directories are allowed for external_directory [39.98ms]
+(pass) defaultAgent returns coding when no default_agent config [1.79ms]
+(pass) defaultAgent respects default_agent config set to plan [1.94ms]
+(pass) defaultAgent respects default_agent config set to custom agent with mode all [2.02ms]
+(pass) defaultAgent throws when default_agent points to subagent [3.34ms]
+(pass) defaultAgent throws when default_agent points to hidden agent [6.02ms]
+(pass) defaultAgent throws when default_agent points to non-existent agent [3.63ms]
+(pass) defaultAgent returns plan when build is disabled and default_agent not set [3.11ms]
+696 |   })
+697 |   await Instance.provide({
+698 |     directory: tmp.path,
+699 |     fn: async () => {
+700 |       // all visible primary-capable agents are disabled
+701 |       await expect(Agent.defaultAgent()).rejects.toThrow("no primary visible agent found")
+                                                       ^
+error: 
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/agent/agent.test.ts:701:50)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/agent/agent.test.ts:697:18)
+(fail) defaultAgent throws when all primary agents are disabled [3.75ms]
+
+test/agent/companion-titling-flow.test.ts:
+(pass) companion.title-generator generateDefaultTitle > generates title from first user message in chronological order [0.28ms]
+(pass) companion.title-generator generateDefaultTitle > uses first user message even if assistant message comes first [0.24ms]
+(pass) companion.title-generator generateDefaultTitle > truncates long messages to 50 characters [0.14ms]
+(pass) companion.title-generator generateDefaultTitle > falls back to date-based title when no messages [1.04ms]
+(pass) companion.title-generator generateDefaultTitle > falls back to date-based title when no user messages exist [0.20ms]
+(pass) companion.title-generator generateDefaultTitle > falls back to date-based title when no text part found [0.10ms]
+(pass) companion.title-generator generateDefaultTitle > sanitizes special characters from message [0.08ms]
+(pass) companion.titling-flow isSessionUntitled > returns true for untitled session (title is null) [1.11ms]
+(pass) companion.titling-flow isSessionUntitled > returns false for titled session [1.00ms]
+(pass) companion.titling-flow isSessionUntitled > returns false for non-existent session [0.10ms]
+(pass) companion.titling-flow getSuggestedTitle > returns null for already titled session [0.71ms]
+(pass) companion.titling-flow getSuggestedTitle > returns suggested title for untitled session [0.83ms]
+(pass) companion.titling-flow applyTitle > updates index with sanitized title [1.11ms]
+(pass) companion.titling-flow applyTitle > updates Session.title to keep metadata synchronized [1.00ms]
+(pass) companion.titling-flow applyTitle > sanitizes user-provided title [0.91ms]
+(pass) companion.titling-flow applyTitle > handles empty title by using 'session' fallback [0.95ms]
+(pass) companion.titling-flow applyTitle > truncates long titles to 50 characters [0.95ms]
+(pass) companion.titling-flow checkAndSuggestTitle > returns wasUntitled=false and null suggestion for titled session [0.74ms]
+(pass) companion.titling-flow checkAndSuggestTitle > returns wasUntitled=true and suggestion for untitled session [0.79ms]
+(pass) companion.titling-flow integration > complete flow: check untitled, get suggestion, apply title [1.10ms]
+(pass) companion.titling-flow integration > complete flow: user provides custom title [1.18ms]
+(pass) companion.title-generator message order verification > Session.messages returns newest-first order (verified by MessageV2.stream implementation) [0.03ms]
+
+test/mcp/oauth-browser.test.ts:
+(pass) BrowserOpenFailed event is published when open() throws [2001.52ms]
+(pass) BrowserOpenFailed event is NOT published when open() succeeds [2002.97ms]
+(pass) open() is called with the authorization URL [2005.20ms]
+
+test/mcp/headers.test.ts:
+(pass) headers are passed to transports when oauth is enabled (default) [9.89ms]
+(pass) headers are passed to transports when oauth is explicitly disabled [3.93ms]
+(pass) no requestInit when headers are not provided [4.86ms]
+
+test/cli/terminal.test.ts:
+(pass) checkTuiSupport > accepts interactive terminal with non-dumb TERM [1.25ms]
+(pass) checkTuiSupport > rejects when stdin is not TTY [0.03ms]
+(pass) checkTuiSupport > rejects TERM="dumb"
+
+test/cli/github-action.test.ts:
+(pass) extractResponseText > returns text from text part
+(pass) extractResponseText > returns last text part when multiple exist [0.01ms]
+(pass) extractResponseText > returns text even when tool parts follow
+(pass) extractResponseText > returns null for reasoning-only response (signals summary needed)
+(pass) extractResponseText > returns null for tool-only response (signals summary needed)
+(pass) extractResponseText > returns null for multiple completed tools
+(pass) extractResponseText > returns null for running tool parts (signals summary needed)
+(pass) extractResponseText > throws on empty array
+(pass) extractResponseText > returns null for step-start only
+(pass) extractResponseText > returns null for step-finish only
+(pass) extractResponseText > returns null for step-start and step-finish
+(pass) extractResponseText > returns text from multi-step response
+(pass) extractResponseText > prefers text over reasoning when both present
+(pass) extractResponseText > prefers text over tools when both present
+
+test/cli/args.test.ts:
+(pass) normalizeCliArgs > maps bare invocation to current directory command [0.53ms]
+(pass) normalizeCliArgs > preserves explicit args
+
+test/cli/import.test.ts:
+(pass) parses valid share URLs [0.44ms]
+(pass) rejects invalid URLs
+(pass) transforms share data to storage format
+(pass) returns null for invalid share data
+
+test/cli/github-remote.test.ts:
+(pass) parses https URL with .git suffix
+(pass) parses https URL without .git suffix
+(pass) parses git@ URL with .git suffix
+(pass) parses git@ URL without .git suffix
+(pass) parses ssh:// URL with .git suffix
+(pass) parses ssh:// URL without .git suffix
+(pass) parses http URL
+(pass) parses URL with hyphenated owner and repo names
+(pass) parses URL with underscores in names
+(pass) parses URL with numbers in names
+(pass) parses repos with dots in the name
+(pass) returns null for non-github URLs
+(pass) returns null for invalid URLs
+(pass) returns null for URLs with extra path segments
+
+test/question/question.test.ts:
+(pass) ask - returns pending promise [37.77ms]
+(pass) ask - adds to pending list [31.60ms]
+(pass) reply - resolves the pending ask with answers [33.12ms]
+(pass) reply - removes from pending list [32.60ms]
+(pass) reply - does nothing for unknown requestID [37.39ms]
+(pass) reject - throws RejectedError [38.94ms]
+(pass) reject - removes from pending list [39.15ms]
+(pass) reject - does nothing for unknown requestID [36.14ms]
+(pass) ask - handles multiple questions [32.60ms]
+(pass) list - returns all pending requests [31.72ms]
+(pass) list - returns empty when no pending [31.19ms]
+
+test/project/project.test.ts:
+(pass) Project.fromDirectory > uses folder-based IDs for non-git directories [0.62ms]
+(pass) Project.fromDirectory > uses git-based IDs when git exists [30.67ms]
+(pass) Project.fromDirectory > returns stable IDs for the same directory [0.71ms]
+(pass) Project.fromDirectory > returns different IDs for different directories [0.72ms]
+(pass) Project.discover > discovers favicon.png in root for git projects [41.61ms]
+(pass) Project.discover > does not discover favicon for non-git projects [1.21ms]
+
+test/patch/patch.test.ts:
+(pass) Patch namespace > parsePatch > should parse simple add file patch [0.54ms]
+(pass) Patch namespace > parsePatch > should parse delete file patch [0.32ms]
+(pass) Patch namespace > parsePatch > should parse patch with multiple hunks [0.85ms]
+(pass) Patch namespace > parsePatch > should parse file move operation [0.17ms]
+(pass) Patch namespace > parsePatch > should throw error for invalid patch format [0.16ms]
+(pass) Patch namespace > maybeParseApplyPatch > should parse direct apply_patch command [0.23ms]
+(pass) Patch namespace > maybeParseApplyPatch > should parse applypatch command [0.13ms]
+(pass) Patch namespace > maybeParseApplyPatch > should handle bash heredoc format [0.20ms]
+(pass) Patch namespace > maybeParseApplyPatch > should return NotApplyPatch for non-patch commands [0.40ms]
+(pass) Patch namespace > applyPatch > should add a new file [0.56ms]
+(pass) Patch namespace > applyPatch > should delete an existing file [0.32ms]
+(pass) Patch namespace > applyPatch > should update an existing file [0.55ms]
+(pass) Patch namespace > applyPatch > should move and update a file [0.48ms]
+(pass) Patch namespace > applyPatch > should handle multiple operations in one patch [0.64ms]
+(pass) Patch namespace > applyPatch > should create parent directories when adding files [0.50ms]
+(pass) Patch namespace > error handling > should throw error when updating non-existent file [0.26ms]
+(pass) Patch namespace > error handling > should throw error when deleting non-existent file [0.17ms]
+(pass) Patch namespace > edge cases > should handle empty files [0.33ms]
+(pass) Patch namespace > edge cases > should handle files with no trailing newline [0.34ms]
+(pass) Patch namespace > edge cases > should handle multiple update chunks in single file [0.40ms]
+
+test/permission/arity.test.ts:
+(pass) arity 1 - unknown commands default to first token [0.62ms]
+(pass) arity 2 - two token commands [0.02ms]
+(pass) arity 3 - three token commands [0.01ms]
+(pass) longest match wins - nested prefixes
+(pass) exact length matches
+(pass) edge cases
+
+test/permission/next.test.ts:
+(pass) fromConfig - string value becomes wildcard rule
+(pass) fromConfig - object value converts to rules array
+(pass) fromConfig - mixed string and object values
+(pass) fromConfig - empty object
+(pass) fromConfig - expands tilde to home directory
+(pass) fromConfig - expands $HOME to home directory
+(pass) fromConfig - expands $HOME without trailing slash
+(pass) fromConfig - does not expand tilde in middle of path
+(pass) fromConfig - expands exact tilde to home directory
+(pass) evaluate - matches expanded tilde pattern
+(pass) evaluate - matches expanded $HOME pattern
+(pass) merge - simple concatenation
+(pass) merge - adds new permission
+(pass) merge - concatenates rules for same permission
+(pass) merge - multiple rulesets
+(pass) merge - empty ruleset does nothing
+(pass) merge - preserves rule order
+(pass) merge - config permission overrides default ask
+(pass) merge - config ask overrides default allow
+(pass) evaluate - exact pattern match
+(pass) evaluate - wildcard pattern match [0.70ms]
+(pass) evaluate - last matching rule wins [0.03ms]
+(pass) evaluate - last matching rule wins (wildcard after specific)
+(pass) evaluate - glob pattern match
+(pass) evaluate - last matching glob wins
+(pass) evaluate - order matters for specificity
+(pass) evaluate - unknown permission returns ask
+(pass) evaluate - empty ruleset returns ask
+(pass) evaluate - no matching pattern returns ask
+(pass) evaluate - empty rules array returns ask
+(pass) evaluate - multiple matching patterns, last wins
+(pass) evaluate - non-matching patterns are skipped
+(pass) evaluate - exact match at end wins over earlier wildcard
+(pass) evaluate - wildcard at end overrides earlier exact match
+(pass) evaluate - wildcard permission matches any permission
+(pass) evaluate - wildcard permission with specific pattern
+(pass) evaluate - glob permission pattern
+(pass) evaluate - specific permission and wildcard permission combined
+(pass) evaluate - wildcard permission does not match when specific exists
+(pass) evaluate - multiple matching permission patterns combine rules
+(pass) evaluate - wildcard permission fallback for unknown tool
+(pass) evaluate - permission patterns sorted by length regardless of object order
+(pass) evaluate - merges multiple rulesets
+(pass) disabled - returns empty set when all tools allowed
+(pass) disabled - disables tool when denied
+(pass) disabled - disables edit/write/patch/multiedit when edit denied
+(pass) disabled - does not disable when partially denied
+(pass) disabled - does not disable when action is ask
+(pass) disabled - does not disable when specific allow after wildcard deny
+(pass) disabled - does not disable when wildcard allow after deny
+(pass) disabled - disables multiple tools
+(pass) disabled - wildcard permission denies all tools
+(pass) disabled - specific allow overrides wildcard deny
+(pass) ask - resolves immediately when action is allow [34.23ms]
+(pass) ask - throws RejectedError when action is deny [32.35ms]
+(pass) ask - returns pending promise when action is ask [31.67ms]
+(pass) reply - once resolves the pending ask [31.52ms]
+(pass) reply - reject throws RejectedError [31.74ms]
+(pass) reply - always persists approval and resolves [31.54ms]
+(pass) reply - reject cancels all pending for same session [34.97ms]
+(pass) ask - checks all patterns and stops on first deny [31.46ms]
+(pass) ask - allows all patterns when all match allow rules [31.63ms]
+
+test/acp/event-subscription.test.ts:
+(pass) acp.agent event subscription > routes message.part.updated by the event sessionID (no cross-session pollution) [15.90ms]
+(pass) acp.agent event subscription > keeps concurrent sessions isolated when message.part.updated events are interleaved [23.23ms]
+(pass) acp.agent event subscription > does not create additional event subscriptions on repeated loadSession() [2.54ms]
+(pass) acp.agent event subscription > permission.asked events are handled and replied [24.06ms]
+(pass) acp.agent event subscription > permission prompt on session A does not block message updates for session B [56.40ms]
+
+test/acp/agent-interface.test.ts:
+(pass) acp.agent interface compliance > Agent implements all SDK-checked methods
+
+test/tool/read.test.ts:
+(pass) tool.read external_directory permission > allows reading absolute path inside project directory [4.19ms]
+(pass) tool.read external_directory permission > allows reading file in subdirectory inside project directory [1.69ms]
+(pass) tool.read external_directory permission > asks for external_directory permission when reading absolute path outside project [35.68ms]
+(pass) tool.read external_directory permission > asks for external_directory permission when reading relative path outside project [34.32ms]
+(pass) tool.read external_directory permission > does not ask for external_directory permission when reading inside project [34.62ms]
+(pass) tool.read env file permissions > agent=build > .env asks=%s [2.02ms]
+(pass) tool.read env file permissions > agent=build > .env.local asks=%s [1.64ms]
+(pass) tool.read env file permissions > agent=build > .env.production asks=%s [1.76ms]
+(pass) tool.read env file permissions > agent=build > .env.development.local asks=%s [2.76ms]
+(pass) tool.read env file permissions > agent=build > .env.example asks=%s [5.43ms]
+(pass) tool.read env file permissions > agent=build > .envrc asks=%s [2.88ms]
+(pass) tool.read env file permissions > agent=build > environment.ts asks=%s [2.46ms]
+(pass) tool.read env file permissions > agent=plan > .env asks=%s [3.57ms]
+(pass) tool.read env file permissions > agent=plan > .env.local asks=%s [2.71ms]
+(pass) tool.read env file permissions > agent=plan > .env.production asks=%s [4.55ms]
+(pass) tool.read env file permissions > agent=plan > .env.development.local asks=%s [2.53ms]
+(pass) tool.read env file permissions > agent=plan > .env.example asks=%s [2.92ms]
+(pass) tool.read env file permissions > agent=plan > .envrc asks=%s [2.58ms]
+(pass) tool.read env file permissions > agent=plan > environment.ts asks=%s [2.57ms]
+(pass) tool.read truncation > truncates large file by bytes and sets truncated metadata [6.19ms]
+(pass) tool.read truncation > truncates by line count when limit is specified [4.57ms]
+(pass) tool.read truncation > does not truncate small file [2.22ms]
+(pass) tool.read truncation > respects offset parameter [2.78ms]
+(pass) tool.read truncation > truncates long lines [3.10ms]
+(pass) tool.read truncation > image files set truncated to false [3.03ms]
+(pass) tool.read truncation > large image files are properly attached without error [14.87ms]
+(pass) tool.read truncation > .fbs files (FlatBuffers schema) are read as text, not images [2.55ms]
+(pass) tool.read loaded instructions > loads AGENTS.md from parent directory and includes in metadata [3.09ms]
+
+test/tool/truncation.test.ts:
+(pass) Truncate > output > truncates large json file by bytes [1.85ms]
+(pass) Truncate > output > returns content unchanged when under limits [0.04ms]
+(pass) Truncate > output > truncates by line count [0.21ms]
+(pass) Truncate > output > truncates by byte count [0.12ms]
+(pass) Truncate > output > truncates from head by default [0.14ms]
+(pass) Truncate > output > truncates from tail when direction is tail [0.12ms]
+(pass) Truncate > output > uses default MAX_LINES and MAX_BYTES [0.01ms]
+(pass) Truncate > output > large single-line file truncates with byte message [1.65ms]
+(pass) Truncate > output > writes full output to file when truncated [0.38ms]
+(pass) Truncate > output > suggests Task tool when agent has task permission [0.20ms]
+(pass) Truncate > output > omits Task tool hint when agent lacks task permission [0.17ms]
+(pass) Truncate > output > does not write file when not truncated [0.03ms]
+(pass) Truncate > cleanup > deletes files older than 7 days and preserves recent files [0.58ms]
+
+test/tool/question.test.ts:
+(pass) tool.question > should successfully execute with valid question parameters [0.65ms]
+(pass) tool.question > should now pass with a header longer than 12 but less than 30 chars [0.02ms]
+
+test/tool/registry.test.ts:
+(pass) tool.registry > loads tools from .opencode/tool (singular) [3035.56ms]
+(pass) tool.registry > loads tools from .opencode/tools (plural) [3042.01ms]
+(pass) tool.registry > loads tools with external dependencies without crashing [3049.67ms]
+
+test/tool/apply_patch.test.ts:
+(pass) tool.apply_patch freeform > requires patchText [0.67ms]
+(pass) tool.apply_patch freeform > rejects invalid patch format
+(pass) tool.apply_patch freeform > rejects empty patch
+(pass) tool.apply_patch freeform > applies add/update/delete in one patch [41.34ms]
+(pass) tool.apply_patch freeform > permission metadata includes move file info [35.38ms]
+(pass) tool.apply_patch freeform > applies multiple hunks to one file [1.85ms]
+(pass) tool.apply_patch freeform > inserts lines with insert-only hunk [1.62ms]
+(pass) tool.apply_patch freeform > appends trailing newline on update [1.67ms]
+(pass) tool.apply_patch freeform > moves file to a new directory [3.97ms]
+(pass) tool.apply_patch freeform > moves file overwriting existing destination [4.42ms]
+(pass) tool.apply_patch freeform > adds file overwriting existing file [2.63ms]
+(pass) tool.apply_patch freeform > rejects update when target file is missing [0.83ms]
+(pass) tool.apply_patch freeform > rejects delete when file is missing [0.85ms]
+(pass) tool.apply_patch freeform > rejects delete when target is a directory [0.76ms]
+(pass) tool.apply_patch freeform > rejects invalid hunk header [0.59ms]
+(pass) tool.apply_patch freeform > rejects update with missing context [0.85ms]
+(pass) tool.apply_patch freeform > verification failure leaves no side effects [0.69ms]
+(pass) tool.apply_patch freeform > supports end of file anchor [1.78ms]
+(pass) tool.apply_patch freeform > rejects missing second chunk context [2.10ms]
+(pass) tool.apply_patch freeform > disambiguates change context with @@ header [1.87ms]
+(pass) tool.apply_patch freeform > EOF anchor matches from end of file first [1.72ms]
+(pass) tool.apply_patch freeform > parses heredoc-wrapped patch [1.62ms]
+(pass) tool.apply_patch freeform > parses heredoc-wrapped patch without cat [2.23ms]
+(pass) tool.apply_patch freeform > matches with trailing whitespace differences [4.26ms]
+(pass) tool.apply_patch freeform > matches with leading whitespace differences [5.81ms]
+(pass) tool.apply_patch freeform > matches with Unicode punctuation differences [2.77ms]
+
+test/tool/skill.test.ts:
+(pass) tool.skill > description lists skill location URL [38.93ms]
+(pass) tool.skill > execute returns skill content block with files [55.46ms]
+
+test/tool/grep.test.ts:
+(pass) tool.grep > basic search [8.98ms]
+(pass) tool.grep > no matches returns correct output [7.60ms]
+(pass) tool.grep > handles CRLF line endings in output [5.06ms]
+(pass) CRLF regex handling > regex correctly splits Unix line endings [0.02ms]
+(pass) CRLF regex handling > regex correctly splits Windows CRLF line endings [0.03ms]
+(pass) CRLF regex handling > regex handles mixed line endings [0.02ms]
+
+test/tool/bash.test.ts:
+(pass) tool.bash > basic [15.97ms]
+(pass) tool.bash permissions > asks for bash permission with correct pattern [41.61ms]
+(pass) tool.bash permissions > asks for bash permission with multiple commands [39.31ms]
+(pass) tool.bash permissions > asks for external_directory permission when cd to parent [40.16ms]
+(pass) tool.bash permissions > asks for external_directory permission when workdir is outside project [41.86ms]
+(pass) tool.bash permissions > asks for external_directory permission when file arg is outside project [49.98ms]
+(pass) tool.bash permissions > does not ask for external_directory permission when rm inside project [49.12ms]
+(pass) tool.bash permissions > includes always patterns for auto-approval [47.58ms]
+(pass) tool.bash permissions > does not ask for bash permission when command is cd only [38.39ms]
+(pass) tool.bash permissions > matches redirects in permission pattern [39.42ms]
+(pass) tool.bash permissions > always pattern has space before wildcard to not include different commands [39.51ms]
+(pass) tool.bash truncation > truncates output exceeding line limit [5.10ms]
+(pass) tool.bash truncation > truncates output exceeding byte limit [7.28ms]
+(pass) tool.bash truncation > does not truncate small output [3.42ms]
+(pass) tool.bash truncation > full output is saved to file when truncated [5.14ms]
+
+test/tool/external-directory.test.ts:
+(pass) tool.assertExternalDirectory > no-ops for empty target [0.53ms]
+(pass) tool.assertExternalDirectory > no-ops for paths inside Instance.directory [0.31ms]
+(pass) tool.assertExternalDirectory > asks with a single canonical glob
+(pass) tool.assertExternalDirectory > uses target directory when kind=directory
+(pass) tool.assertExternalDirectory > skips prompting when bypass=true
+
+test/session/prompt-special-chars.test.ts:
+20 |     })
+21 | 
+22 |     await Instance.provide({
+23 |       directory: tmp.path,
+24 |       fn: async () => {
+25 |         const session = await Session.create({})
+                                           ^
+TypeError: Session.create is not a function. (In 'Session.create({})', 'Session.create' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-special-chars.test.ts:25:39)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-special-chars.test.ts:22:20)
+(fail) session.prompt special characters > handles filenames with # character [39.26ms]
+
+test/session/message-v2.test.ts:
+(pass) session.message-v2.toModelMessage > filters out messages with no parts [0.42ms]
+(pass) session.message-v2.toModelMessage > filters out messages with only ignored parts
+(pass) session.message-v2.toModelMessage > includes synthetic text parts [0.40ms]
+(pass) session.message-v2.toModelMessage > converts user text/file parts and injects compaction/subtask prompts
+(pass) session.message-v2.toModelMessage > converts assistant tool completion into tool-call + tool-result messages with attachments
+(pass) session.message-v2.toModelMessage > omits provider metadata when assistant model differs
+(pass) session.message-v2.toModelMessage > replaces compacted tool output with placeholder
+(pass) session.message-v2.toModelMessage > converts assistant tool error into error-text tool result
+(pass) session.message-v2.toModelMessage > filters assistant messages with non-abort errors
+(pass) session.message-v2.toModelMessage > includes aborted assistant messages only when they have non-step-start/reasoning content
+(pass) session.message-v2.toModelMessage > splits assistant messages on step-start boundaries
+(pass) session.message-v2.toModelMessage > drops messages that only contain step-start parts
+(pass) session.message-v2.toModelMessage > converts pending/running tool calls to error results to prevent dangling tool_use [0.73ms]
+(pass) session.message-v2.fromError > serializes response error codes [0.05ms]
+(pass) session.message-v2.fromError > serializes unknown inputs
+
+test/session/retry.test.ts:
+(pass) session.retry.delay > caps delay at 30 seconds when headers missing
+(pass) session.retry.delay > prefers retry-after-ms when shorter than exponential
+(pass) session.retry.delay > uses retry-after seconds when reasonable
+(pass) session.retry.delay > accepts http-date retry-after values [0.29ms]
+(pass) session.retry.delay > ignores invalid retry hints
+(pass) session.retry.delay > ignores malformed date retry hints
+(pass) session.retry.delay > ignores past date retry hints
+(pass) session.retry.delay > uses retry-after values even when exceeding 10 minutes with headers
+(pass) session.retry.delay > sleep caps delay to max 32-bit signed integer to avoid TimeoutOverflowWarning
+(pass) session.retry.retryable > maps too_many_requests json messages
+(pass) session.retry.retryable > maps overloaded provider codes
+(pass) session.retry.retryable > handles json messages without code
+(pass) session.retry.retryable > does not throw on numeric error codes
+(pass) session.retry.retryable > returns undefined for non-json message
+(pass) session.message-v2.fromError > converts ECONNRESET socket errors to retryable APIError [8004.56ms]
+(pass) session.message-v2.fromError > ECONNRESET socket error is retryable
+(pass) session.message-v2.fromError > marks OpenAI 404 status codes as retryable [1.40ms]
+
+test/session/compaction.test.ts:
+(pass) session.compaction.isOverflow > returns true when token count exceeds usable context [6.98ms]
+(pass) session.compaction.isOverflow > returns false when token count within usable context [4.33ms]
+(pass) session.compaction.isOverflow > includes cache.read in token count [4.92ms]
+(pass) session.compaction.isOverflow > respects input limit for input caps [2.48ms]
+(pass) session.compaction.isOverflow > returns false when input/output are within input caps [2.98ms]
+(pass) session.compaction.isOverflow > returns false when output within limit with input caps [3.14ms]
+(pass) session.compaction.isOverflow > returns false when model context limit is 0 [3.60ms]
+(pass) session.compaction.isOverflow > returns false when compaction.auto is disabled [6.25ms]
+(pass) util.token.estimate > estimates tokens from text (4 chars per token) [0.17ms]
+(pass) util.token.estimate > estimates tokens from larger text
+(pass) util.token.estimate > returns 0 for empty string
+163 | })
+164 | 
+165 | describe("session.getUsage", () => {
+166 |   test("normalizes standard usage to token format", () => {
+167 |     const model = createModel({ context: 100_000, output: 32_000 })
+168 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:168:28)
+(fail) session.getUsage > normalizes standard usage to token format [0.20ms]
+181 |     expect(result.tokens.cache.write).toBe(0)
+182 |   })
+183 | 
+184 |   test("extracts cached tokens to cache.read", () => {
+185 |     const model = createModel({ context: 100_000, output: 32_000 })
+186 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500,
+        cachedInputTokens: 200
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:186:28)
+(fail) session.getUsage > extracts cached tokens to cache.read [0.26ms]
+197 |     expect(result.tokens.cache.read).toBe(200)
+198 |   })
+199 | 
+200 |   test("handles anthropic cache write metadata", () => {
+201 |     const model = createModel({ context: 100_000, output: 32_000 })
+202 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500
+      },
+      metadata: {
+        anthropic: {
+          cacheCreationInputTokens: 300
+        }
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:202:28)
+(fail) session.getUsage > handles anthropic cache write metadata [0.14ms]
+216 |     expect(result.tokens.cache.write).toBe(300)
+217 |   })
+218 | 
+219 |   test("does not subtract cached tokens for anthropic provider", () => {
+220 |     const model = createModel({ context: 100_000, output: 32_000 })
+221 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500,
+        cachedInputTokens: 200
+      },
+      metadata: {
+        anthropic: {}
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:221:28)
+(fail) session.getUsage > does not subtract cached tokens for anthropic provider [0.13ms]
+235 |     expect(result.tokens.cache.read).toBe(200)
+236 |   })
+237 | 
+238 |   test("handles reasoning tokens", () => {
+239 |     const model = createModel({ context: 100_000, output: 32_000 })
+240 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500,
+        reasoningTokens: 100
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:240:28)
+(fail) session.getUsage > handles reasoning tokens [0.12ms]
+250 |     expect(result.tokens.reasoning).toBe(100)
+251 |   })
+252 | 
+253 |   test("handles undefined optional values gracefully", () => {
+254 |     const model = createModel({ context: 100_000, output: 32_000 })
+255 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:255:28)
+(fail) session.getUsage > handles undefined optional values gracefully [0.08ms]
+277 |         input: 3,
+278 |         output: 15,
+279 |         cache: { read: 0.3, write: 3.75 },
+280 |       },
+281 |     })
+282 |     const result = Session.getUsage({
+                                 ^
+TypeError: Session.getUsage is not a function. (In 'Session.getUsage({
+      model,
+      usage: {
+        inputTokens: 1e6,
+        outputTokens: 1e5,
+        totalTokens: 1100000
+      }
+    })', 'Session.getUsage' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/compaction.test.ts:282:28)
+(fail) session.getUsage > calculates cost correctly [0.06ms]
+
+test/session/revert-compact.test.ts:
+17 |     await using tmp = await tmpdir({ git: true })
+18 |     await Instance.provide({
+19 |       directory: tmp.path,
+20 |       fn: async () => {
+21 |         // Create a session
+22 |         const session = await Session.create({})
+                                           ^
+TypeError: Session.create is not a function. (In 'Session.create({})', 'Session.create' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/revert-compact.test.ts:22:39)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/revert-compact.test.ts:18:20)
+(fail) revert + compact workflow > should properly handle compact command after revert [40.49ms]
+193 |     await using tmp = await tmpdir({ git: true })
+194 |     await Instance.provide({
+195 |       directory: tmp.path,
+196 |       fn: async () => {
+197 |         // Create a session
+198 |         const session = await Session.create({})
+                                            ^
+TypeError: Session.create is not a function. (In 'Session.create({})', 'Session.create' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/revert-compact.test.ts:198:39)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/revert-compact.test.ts:194:20)
+(fail) revert + compact workflow > should properly clean up revert state before creating compaction message [35.29ms]
+
+test/session/instruction.test.ts:
+(pass) InstructionPrompt.resolve > returns empty when AGENTS.md is at project root (already in systemPaths) [2.47ms]
+(pass) InstructionPrompt.resolve > returns AGENTS.md from subdirectory (not in systemPaths) [1.89ms]
+(pass) InstructionPrompt.resolve > doesn't reload AGENTS.md when reading it directly [1.62ms]
+(pass) InstructionPrompt.systemPaths OPENCODE_CONFIG_DIR > prefers OPENCODE_CONFIG_DIR AGENTS.md over global when both exist [1.84ms]
+(pass) InstructionPrompt.systemPaths OPENCODE_CONFIG_DIR > falls back to global AGENTS.md when OPENCODE_CONFIG_DIR has no AGENTS.md [1.63ms]
+(pass) InstructionPrompt.systemPaths OPENCODE_CONFIG_DIR > uses global AGENTS.md when OPENCODE_CONFIG_DIR is not set [1.09ms]
+
+test/session/llm.test.ts:
+(pass) session.llm.hasToolCalls > returns false for empty messages array [0.14ms]
+(pass) session.llm.hasToolCalls > returns false for messages with only text content
+(pass) session.llm.hasToolCalls > returns true when messages contain tool-call
+(pass) session.llm.hasToolCalls > returns true when messages contain tool-result
+(pass) session.llm.hasToolCalls > returns false for messages with string content [0.08ms]
+(pass) session.llm.hasToolCalls > returns true when tool-call is mixed with text content
+(pass) session.llm.stream > sends temperature, tokens, and reasoning options for openai-compatible models [20.30ms]
+(pass) session.llm.stream > sends responses API payload for OpenAI models [15.40ms]
+(pass) session.llm.stream > sends messages API payload for Anthropic models [16.09ms]
+(pass) session.llm.stream > sends Google API payload for Gemini models [14.59ms]
+
+test/session/prompt-variant.test.ts:
+19 |     })
+20 | 
+21 |     await Instance.provide({
+22 |       directory: tmp.path,
+23 |       fn: async () => {
+24 |         const session = await Session.create({})
+                                           ^
+TypeError: Session.create is not a function. (In 'Session.create({})', 'Session.create' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-variant.test.ts:24:39)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-variant.test.ts:21:20)
+(fail) session.prompt agent variant > applies agent variant only when using agent model [34.42ms]
+
+test/session/prompt-missing-file.test.ts:
+19 |     })
+20 | 
+21 |     await Instance.provide({
+22 |       directory: tmp.path,
+23 |       fn: async () => {
+24 |         const session = await Session.create({})
+                                           ^
+TypeError: Session.create is not a function. (In 'Session.create({})', 'Session.create' is undefined)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-missing-file.test.ts:24:39)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/prompt-missing-file.test.ts:21:20)
+(fail) session.prompt missing file > does not fail the prompt when a file part is missing [32.97ms]
+
+test/session/session.test.ts:
+14 |       directory: projectRoot,
+15 |       fn: async () => {
+16 |         let eventReceived = false
+17 |         let receivedInfo: Session.Info | undefined
+18 | 
+19 |         const unsub = Bus.subscribe(Session.Event.Created, (event) => {
+                                                 ^
+TypeError: undefined is not an object (evaluating 'Session.Event.Created')
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/session.test.ts:19:45)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/session.test.ts:13:20)
+(fail) session.started event > should emit session.started event when session is created [0.03ms]
+43 |     await Instance.provide({
+44 |       directory: projectRoot,
+45 |       fn: async () => {
+46 |         const events: string[] = []
+47 | 
+48 |         const unsubStarted = Bus.subscribe(Session.Event.Created, () => {
+                                                        ^
+TypeError: undefined is not an object (evaluating 'Session.Event.Created')
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/session.test.ts:48:52)
+      at <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/src/project/instance.ts:42:20)
+      at run (node:async_hooks:62:22)
+      at async <anonymous> (/Users/christiansmith/code/projects/opencontext/packages/opencode/test/session/session.test.ts:43:20)
+(fail) session.started event > session.started event should be emitted before session.updated [0.25ms]
+
+test/session/system.test.ts:
+(pass) routes gpt models to codex header prompt
+(pass) routes o-series models to codex header prompt
+
+test/provider/copilot/convert-to-copilot-messages.test.ts:
+(pass) system messages > should convert system message content to string
+(pass) user messages > should convert messages with only a text part to a string content
+(pass) user messages > should convert messages with image parts
+(pass) user messages > should convert messages with image parts from Uint8Array
+(pass) user messages > should handle URL-based images
+(pass) user messages > should handle multiple text parts without flattening
+(pass) assistant messages > should convert assistant text messages
+(pass) assistant messages > should handle assistant message with null content when only tool calls
+(pass) assistant messages > should concatenate multiple text parts
+(pass) tool calls > should stringify arguments to tool calls
+(pass) tool calls > should handle text output type in tool results
+(pass) tool calls > should handle multiple tool results as separate messages
+(pass) tool calls > should handle text plus multiple tool calls [0.88ms]
+(pass) reasoning (copilot-specific) > should omit reasoning_text without reasoning_opaque [0.02ms]
+(pass) reasoning (copilot-specific) > should include reasoning_opaque from providerOptions [0.01ms]
+(pass) reasoning (copilot-specific) > should include reasoning_opaque from text part providerOptions
+(pass) reasoning (copilot-specific) > should handle reasoning-only assistant message [0.05ms]
+(pass) full conversation > should convert a multi-turn conversation with reasoning [0.02ms]
+
+test/provider/copilot/copilot-chat-model.test.ts:
+(pass) doStream > should stream text deltas [1.59ms]
+(pass) doStream > should stream reasoning with tool calls and capture reasoning_opaque [0.95ms]
+(pass) doStream > should handle reasoning_opaque that comes at end with text in between [0.47ms]
+(pass) doStream > should handle reasoning_opaque and content in the same chunk [0.55ms]
+(pass) doStream > should handle reasoning_opaque and content followed by tool calls [0.55ms]
+(pass) doStream > should emit reasoning-end before tool-input-start when reasoning goes directly to tool calls [0.54ms]
+(pass) doStream > should attach reasoning_opaque to tool calls without reasoning_text [0.46ms]
+(pass) doStream > should include response metadata from first chunk [0.27ms]
+(pass) doStream > should emit stream-start with warnings [0.47ms]
+(pass) doStream > should include raw chunks when requested [0.34ms]
+(pass) request body > should send tools in OpenAI format [0.33ms]
+
+test/cli/tui/transcript.test.ts:
+(pass) transcript > formatAssistantHeader > includes metadata when enabled
+(pass) transcript > formatAssistantHeader > excludes metadata when disabled
+(pass) transcript > formatAssistantHeader > handles missing completed time
+(pass) transcript > formatAssistantHeader > titlecases agent name
+(pass) transcript > formatPart > formats text part
+(pass) transcript > formatPart > skips synthetic text parts
+(pass) transcript > formatPart > formats reasoning when thinking enabled
+(pass) transcript > formatPart > skips reasoning when thinking disabled
+(pass) transcript > formatPart > formats tool part with details
+(pass) transcript > formatPart > formats tool output containing triple backticks without breaking markdown
+(pass) transcript > formatPart > formats tool part without details when disabled
+(pass) transcript > formatPart > formats tool error
+(pass) transcript > formatMessage > formats user message
+(pass) transcript > formatMessage > formats assistant message with metadata
+(pass) transcript > formatTranscript > formats complete transcript [7.66ms]
+(pass) transcript > formatTranscript > formats transcript without assistant metadata [0.13ms]
+
+test/cli/tui/project-path.test.ts:
+(pass) resolveProjectDirectory > resolves relative project against absolute PWD
+(pass) resolveProjectDirectory > falls back to cwd when PWD is non-absolute
+(pass) resolveProjectDirectory > repairs missing leading slash in PWD when it matches home
+(pass) resolveProjectDirectory > repairs missing leading slash in project argument when it matches home
+(pass) resolveProjectDirectory > expands tilde project
+
+1 tests skipped:
+(skip) unicode filenames modification and restore
+
+
+15 tests failed:
+(fail) defaultAgent throws when all primary agents are disabled [3.75ms]
+(fail) session.prompt special characters > handles filenames with # character [39.26ms]
+(fail) session.getUsage > normalizes standard usage to token format [0.20ms]
+(fail) session.getUsage > extracts cached tokens to cache.read [0.26ms]
+(fail) session.getUsage > handles anthropic cache write metadata [0.14ms]
+(fail) session.getUsage > does not subtract cached tokens for anthropic provider [0.13ms]
+(fail) session.getUsage > handles reasoning tokens [0.12ms]
+(fail) session.getUsage > handles undefined optional values gracefully [0.08ms]
+(fail) session.getUsage > calculates cost correctly [0.06ms]
+(fail) revert + compact workflow > should properly handle compact command after revert [40.49ms]
+(fail) revert + compact workflow > should properly clean up revert state before creating compaction message [35.29ms]
+(fail) session.prompt agent variant > applies agent variant only when using agent model [34.42ms]
+(fail) session.prompt missing file > does not fail the prompt when a file part is missing [32.97ms]
+(fail) session.started event > should emit session.started event when session is created [0.03ms]
+(fail) session.started event > session.started event should be emitted before session.updated [0.25ms]
+
+ 980 pass
+ 1 skip
+ 15 fail
+ 2131 expect() calls
+Ran 996 tests across 76 files. [47.66s]

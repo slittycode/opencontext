@@ -55,6 +55,16 @@ export namespace Provider {
     return isGpt5OrLater(modelID) && !modelID.startsWith("gpt-5-mini")
   }
 
+  export const PRIORITY: Record<string, number> = {
+    opencode: 0,
+    anthropic: 1,
+    "github-copilot": 2,
+    openai: 3,
+    google: 4,
+    openrouter: 5,
+    vercel: 6,
+  }
+
   const BUNDLED_PROVIDERS: Record<string, (options: any) => SDK> = {
     "@ai-sdk/amazon-bedrock": createAmazonBedrock,
     "@ai-sdk/anthropic": createAnthropic,
@@ -76,7 +86,8 @@ export namespace Provider {
     "@ai-sdk/perplexity": createPerplexity,
     "@ai-sdk/vercel": createVercel,
     "@gitlab/gitlab-ai-provider": createGitLab,
-    // @ts-ignore (TODO: kill this code so we dont have to maintain it)
+    // FIXME: kill this code so we dont have to maintain it
+    // @ts-ignore
     "@ai-sdk/github-copilot": createGitHubCopilotOpenAICompatible,
   }
 
@@ -130,26 +141,16 @@ export namespace Provider {
         options: {},
       }
     },
-    "github-copilot": async () => {
-      return {
-        autoload: false,
-        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          if (sdk.responses === undefined && sdk.chat === undefined) return sdk.languageModel(modelID)
-          return shouldUseCopilotResponsesApi(modelID) ? sdk.responses(modelID) : sdk.chat(modelID)
-        },
-        options: {},
+    ...(() => {
+      const getCopilotModel = async (sdk: any, modelID: string, _options?: Record<string, any>) => {
+        if (sdk.responses === undefined && sdk.chat === undefined) return sdk.languageModel(modelID)
+        return shouldUseCopilotResponsesApi(modelID) ? sdk.responses(modelID) : sdk.chat(modelID)
       }
-    },
-    "github-copilot-enterprise": async () => {
       return {
-        autoload: false,
-        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          if (sdk.responses === undefined && sdk.chat === undefined) return sdk.languageModel(modelID)
-          return shouldUseCopilotResponsesApi(modelID) ? sdk.responses(modelID) : sdk.chat(modelID)
-        },
-        options: {},
+        "github-copilot": async () => ({ autoload: false, getModel: getCopilotModel, options: {} }),
+        "github-copilot-enterprise": async () => ({ autoload: false, getModel: getCopilotModel, options: {} })
       }
-    },
+    })(),
     azure: async () => {
       return {
         autoload: false,
@@ -329,7 +330,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencontext.ai/",
             "X-Title": "opencode",
           },
         },
@@ -340,7 +341,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
+            "http-referer": "https://opencontext.ai/",
             "x-title": "opencode",
           },
         },
@@ -409,7 +410,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencontext.ai/",
             "X-Title": "opencode",
           },
         },
@@ -737,12 +738,14 @@ export namespace Provider {
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
       if (existing) {
+        // FIXME: remeda mergeDeep has poor type inference for this complex nested object
         // @ts-expect-error
         providers[providerID] = mergeDeep(existing, provider)
         return
       }
       const match = database[providerID]
       if (!match) return
+      // FIXME: remeda mergeDeep has poor type inference for this complex nested object
       // @ts-expect-error
       providers[providerID] = mergeDeep(match, provider)
     }
@@ -1040,7 +1043,8 @@ export namespace Provider {
 
         return fetchFn(input, {
           ...opts,
-          // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682
+          // FIXME: see here: https://github.com/oven-sh/bun/issues/16682
+          // @ts-ignore
           timeout: false,
         })
       }

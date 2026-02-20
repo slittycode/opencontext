@@ -32,10 +32,17 @@ test("CLI lifecycle: untitled session → suggestion accepted (simulated)", asyn
     fn: async () => {
       // Create a new companion session (simulates CLI session start)
       const sessionID = await createNewSession()
-      
-      // Simulate that user had a conversation (messages would be added here in real usage)
-      // For this test, we verify the titling flow works even without messages
-      
+
+      // Simulate user message for titling to work
+      await Session.updateMessage({
+        id: "msg-1",
+        sessionID: sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "companion",
+        model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
+      })
+
       // Simulate session exit: check if untitled and get suggestion
       const { wasUntitled, suggestion } = await checkAndSuggestTitle(sessionID)
       
@@ -65,7 +72,17 @@ test("CLI lifecycle: untitled session → custom title entered", async () => {
     fn: async () => {
       // Create session
       const sessionID = await createNewSession()
-      
+
+// Add user message
+      await Session.updateMessage({
+        id: "msg-1",
+        sessionID: sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "companion",
+        model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
+      })
+
       // Get suggestion
       const { wasUntitled, suggestion } = await checkAndSuggestTitle(sessionID)
       expect(wasUntitled).toBe(true)
@@ -94,7 +111,17 @@ test("CLI lifecycle: cancel at confirm → session remains untitled", async () =
     fn: async () => {
       // Create session
       const sessionID = await createNewSession()
-      
+
+      // Add user message
+      await Session.updateMessage({
+        id: "msg-1",
+        sessionID: sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "companion",
+        model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
+      })
+
       // Get suggestion
       const { wasUntitled, suggestion } = await checkAndSuggestTitle(sessionID)
       expect(wasUntitled).toBe(true)
@@ -121,7 +148,17 @@ test("CLI lifecycle: cancel at custom title prompt → session remains untitled"
     fn: async () => {
       // Create session
       const sessionID = await createNewSession()
-      
+
+      // Add user message
+      await Session.updateMessage({
+        id: "msg-1",
+        sessionID: sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "companion",
+        model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
+      })
+
       // Get suggestion
       const { wasUntitled, suggestion } = await checkAndSuggestTitle(sessionID)
       expect(wasUntitled).toBe(true)

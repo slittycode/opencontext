@@ -234,7 +234,7 @@ function App() {
 
   const args = useArgs()
   onMount(() => {
-    batch(() => {
+    batch(async () => {
       if (args.agent) local.agent.set(args.agent)
       if (args.model) {
         const { providerID, modelID } = Provider.parseModel(args.model)
@@ -246,6 +246,24 @@ function App() {
           })
         local.model.set({ providerID, modelID }, { recent: true })
       }
+
+      // Handle companion agent: auto-create session if none specified
+      if (args.agent === "companion" && !args.sessionID && !args.continue) {
+        const { createNewSession, getAvailableSessions } = await import(
+          "@/agent/companion/session-selection"
+        )
+        const sessions = await getAvailableSessions()
+        if (sessions.length > 0) {
+          // Navigate to home with prompt to select session (let user choose)
+          route.navigate({ type: "home" })
+        } else {
+          // Create new session and navigate to it
+          const sessionID = await createNewSession()
+          route.navigate({ type: "session", sessionID })
+        }
+        return
+      }
+
       // Handle --session without --fork immediately (fork is handled in createEffect below)
       if (args.sessionID && !args.fork) {
         route.navigate({

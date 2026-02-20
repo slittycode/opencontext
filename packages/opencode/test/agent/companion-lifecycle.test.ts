@@ -67,6 +67,16 @@ test("complete lifecycle: start new session → add to index → title → verif
       const session = await Session.get(sessionID)
       expect(session).toBeDefined()
 
+      // Add a user message to simulate real conversation
+      await Session.updateMessage({
+        id: "msg-1",
+        sessionID: sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "companion",
+        model: { providerID: "anthropic", modelID: "claude-3-5-sonnet-20241022" },
+      })
+
       // Step 4: Check if session is untitled and get suggestion
       const { wasUntitled, suggestion } = await checkAndSuggestTitle(sessionID)
       expect(wasUntitled).toBe(true)
