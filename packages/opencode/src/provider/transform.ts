@@ -645,7 +645,9 @@ export namespace ProviderTransform {
 
     if (input.model.api.id.includes("gpt-5") && !input.model.api.id.includes("gpt-5-chat")) {
       if (!input.model.api.id.includes("gpt-5-pro")) {
-        result["reasoningEffort"] = "medium"
+        // Codex models can feel sluggish at medium reasoning effort for interactive coding flows.
+        // Default to low effort unless a variant overrides it.
+        result["reasoningEffort"] = input.model.api.id.includes("codex") ? "low" : "medium"
         result["reasoningSummary"] = "auto"
       }
 

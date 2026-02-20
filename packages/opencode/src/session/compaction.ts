@@ -14,6 +14,7 @@ import { fn } from "@/util/fn"
 import { Agent } from "@/agent/agent"
 import { Plugin } from "@/plugin"
 import { Config } from "@/config/config"
+import { NamedError } from "@opencode-ai/util/error"
 
 export namespace SessionCompaction {
   const log = Log.create({ service: "session.compaction" })
@@ -98,6 +99,9 @@ export namespace SessionCompaction {
   }) {
     const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
     const agent = await Agent.get("compaction")
+    if (!agent) {
+      throw new NamedError.Unknown({ message: 'Agent not found: "compaction".' })
+    }
     const model = agent.model
       ? await Provider.getModel(agent.model.providerID, agent.model.modelID)
       : await Provider.getModel(userMessage.model.providerID, userMessage.model.modelID)

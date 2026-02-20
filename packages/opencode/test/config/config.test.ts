@@ -424,6 +424,60 @@ test("migrates mode field to agent field", async () => {
   })
 })
 
+test("migrates legacy default_agent to canonical agent ID", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(
+        path.join(dir, "opencode.json"),
+        JSON.stringify({
+          $schema: "https://opencode.ai/config.json",
+          default_agent: "research",
+        }),
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await Config.get()
+      expect(config.default_agent).toBe("researcher")
+    },
+  })
+})
+
+test("migrates legacy agent config keys to canonical IDs", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await Bun.write(
+        path.join(dir, "opencode.json"),
+        JSON.stringify({
+          $schema: "https://opencode.ai/config.json",
+          agent: {
+            research: {
+              description: "legacy config",
+              temperature: 0.2,
+            },
+            researcher: {
+              description: "canonical config",
+            },
+          },
+        }),
+      )
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await Config.get()
+      expect(config.agent?.research).toBeUndefined()
+      expect(config.agent?.researcher?.description).toBe("canonical config")
+      expect(config.agent?.researcher?.temperature).toBe(0.2)
+    },
+  })
+})
+
 test("loads config from .opencode directory", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {

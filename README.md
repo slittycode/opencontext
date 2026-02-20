@@ -16,17 +16,17 @@ OpenContext extends OpenCode's powerful terminal interface with specialized agen
 # Install Bun (if not installed)
 curl -fsSL https://bun.sh/install | bash
 
-# Clone and setup
-git clone https://github.com/YOUR_USERNAME/opencontext.git
+# Clone and bootstrap v1
+git clone https://github.com/slittycode/opencontext.git
 cd opencontext
-bun install
-
-# Link CLI globally
-ln -sf $(pwd)/packages/opencode/bin/opencontext ~/.bun/bin/opencontext
+bash ./script/bootstrap-v1.sh
+# or: bun run bootstrap:v1
 
 # Run
 opencontext
 ```
+
+`curl | bash` installer rollout is intentionally deferred until release artifacts are guaranteed.
 
 ---
 
@@ -40,19 +40,31 @@ opencontext --version    # Show version
 
 ### Switching Agents
 
-Press `Tab` or type `/agent` to switch between agent personalities:
+Press `Tab` or type `/agents` to switch between primary agent personalities:
 
-| Agent            | Description                          |
-| ---------------- | ------------------------------------ |
-| 🔧 **build**     | Full-access coding agent (default)   |
-| 📋 **plan**      | Read-only code exploration           |
-| 🔍 **research**  | Deep research, web search, synthesis |
-| 🎓 **socratic**  | Teaching through questions           |
-| 📝 **cv-review** | Resume/CV analysis and improvement   |
-| 💭 **brainstorm**| Creative ideation and exploration    |
-| 📚 **tutor**     | Patient explanations and learning    |
+| Agent              | Mode      | Description                                                     |
+| ------------------ | --------- | --------------------------------------------------------------- |
+| 🔧 **coding**      | primary   | Full-access coding agent (default)                              |
+| 📋 **plan**        | primary   | Planning mode with file edits disabled                          |
+| 🔍 **researcher**  | primary   | Multi-source research and evidence-based synthesis              |
+| 🎓 **teacher**     | primary   | Adaptive explanations and guided learning                       |
+| ✨ **ideator**     | primary   | Creative ideation and structured idea evaluation                |
+| 📝 **career**      | primary   | Career strategy, CV/resume, interview preparation              |
+| 🧰 **codeexpert**  | primary   | Code understanding, implementation, and improvement             |
 
+Subagents also available: `general` and `explore`.
+Legacy alias: `build` maps to `coding` and is hidden by default.
 Each agent has tailored permissions and prompts for its specialty.
+
+### MCP Servers
+
+```bash
+opencontext mcp list
+opencontext mcp auth <server-name>
+opencontext mcp add
+```
+
+In the TUI, open the MCP dialog with `/mcps` (plural).
 
 ---
 
@@ -68,7 +80,7 @@ Each agent has tailored permissions and prompts for its specialty.
 
 ## Configuration
 
-Create `~/.config/opencontext/config.json`:
+Create `~/.config/opencontext/opencontext.json`:
 
 ```json
 {
@@ -77,11 +89,24 @@ Create `~/.config/opencontext/config.json`:
       "api_key": "sk-..."
     }
   },
-  "default_agent": "research"
+  "default_agent": "researcher"
 }
 ```
 
+Compatibility: legacy `opencode.json` / `config.json` files are still read, but `opencontext.json` is preferred.
+
 See [OpenCode docs](https://opencode.ai/docs) for full configuration options.
+
+---
+
+## Agent Documentation
+
+For implementation details and contributor guidance:
+
+- Repo-wide agent guide: `AGENTS.md`
+- Core package guide: `packages/opencode/AGENTS.md`
+- Built-in OpenContext agent definitions: `packages/opencode/src/agent/context-agents.ts`
+- Agent prompts: `packages/opencode/src/agent/prompt/`
 
 ---
 

@@ -284,7 +284,7 @@ export class OpenAICompatibleChatLanguageModel implements LanguageModelV2 {
         cachedInputTokens: responseBody.usage?.prompt_tokens_details?.cached_tokens ?? undefined,
       },
       providerMetadata,
-      request: { body },
+      request: { body: args },
       response: {
         ...getResponseMetadata(responseBody),
         headers: responseHeaders,

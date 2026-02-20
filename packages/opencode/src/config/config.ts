@@ -31,6 +31,7 @@ import { Event } from "../server/event"
 import { PackageRegistry } from "@/bun/registry"
 import { proxied } from "@/util/proxied"
 import { iife } from "@/util/iife"
+import { canonicalizeAgentName } from "@/agent/legacy-agents"
 
 export namespace Config {
   const CONFIG_SCHEMA_URL = "https://opencode.ai/config.json"
@@ -206,6 +207,34 @@ export namespace Config {
           mode: "primary" as const,
         },
       })
+    }
+
+    // Migrate deprecated legacy agent IDs to canonical IDs.
+    if (result.default_agent) {
+      const defaultAgent = canonicalizeAgentName(result.default_agent)
+      if (defaultAgent.aliased) {
+        log.warn("migrating legacy default_agent", {
+          from: result.default_agent,
+          to: defaultAgent.canonical,
+        })
+        result.default_agent = defaultAgent.canonical
+      }
+    }
+
+    if (result.agent) {
+      const migrated: NonNullable<Info["agent"]> = { ...result.agent }
+      for (const [name, value] of Object.entries(result.agent)) {
+        const resolution = canonicalizeAgentName(name)
+        if (!resolution.aliased) continue
+        const existing = migrated[resolution.canonical]
+        migrated[resolution.canonical] = existing ? mergeDeep(value, existing) : value
+        delete migrated[name]
+        log.warn("migrating legacy agent config key", {
+          from: name,
+          to: resolution.canonical,
+        })
+      }
+      result.agent = migrated
     }
 
     if (Flag.OPENCODE_PERMISSION) {

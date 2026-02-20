@@ -385,8 +385,7 @@ export namespace File {
       const untrackedFiles = untrackedOutput.trim().split("\n")
       for (const filepath of untrackedFiles) {
         try {
-          const content = await Bun.file(path.join(Instance.directory, filepath)).text()
-          const lines = content.split("\n").length
+          const lines = await countLines(path.join(Instance.directory, filepath))
           changedFiles.push({
             path: filepath,
             added: lines,
@@ -418,10 +417,7 @@ export namespace File {
       }
     }
 
-    return changedFiles.map((x) => ({
-      ...x,
-      path: path.relative(Instance.directory, x.path),
-    }))
+    return changedFiles
   }
 
   export async function read(file: string): Promise<Content> {
@@ -429,8 +425,6 @@ export namespace File {
     const project = Instance.project
     const full = path.join(Instance.directory, file)
 
-    // TODO: Filesystem.contains is lexical only - symlinks inside the project can escape.
-    // TODO: On Windows, cross-drive paths bypass this check. Consider realpath canonicalization.
     if (!Instance.containsPath(full)) {
       throw new Error(`Access denied: path escapes project directory`)
     }
@@ -470,10 +464,7 @@ export namespace File {
       return { type: "text", content, mimeType, encoding: "base64" }
     }
 
-    const content = await bunFile
-      .text()
-      .catch(() => "")
-      .then((x) => x.trim())
+    const content = await bunFile.text().catch(() => "")
 
     if (project.vcs === "git") {
       let diff = await $`git diff ${file}`.cwd(Instance.directory).quiet().nothrow().text()
@@ -509,8 +500,6 @@ export namespace File {
     }
     const resolved = dir ? path.join(Instance.directory, dir) : Instance.directory
 
-    // TODO: Filesystem.contains is lexical only - symlinks inside the project can escape.
-    // TODO: On Windows, cross-drive paths bypass this check. Consider realpath canonicalization.
     if (!Instance.containsPath(resolved)) {
       throw new Error(`Access denied: path escapes project directory`)
     }
@@ -538,6 +527,33 @@ export namespace File {
         return a.type === "directory" ? -1 : 1
       }
       return a.name.localeCompare(b.name)
+    })
+  }
+
+  async function countLines(filePath: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(filePath)
+      let hasBytes = false
+      let newlineCount = 0
+      let lastByte = 0
+
+      stream.on("data", (chunk: string | Buffer) => {
+        const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk
+        if (buffer.length === 0) return
+        hasBytes = true
+        for (const byte of buffer) {
+          if (byte === 10) newlineCount++
+        }
+        lastByte = buffer[buffer.length - 1]
+      })
+      stream.on("error", reject)
+      stream.on("end", () => {
+        if (!hasBytes) {
+          resolve(0)
+          return
+        }
+        resolve(newlineCount + (lastByte === 10 ? 0 : 1))
+      })
     })
   }
 

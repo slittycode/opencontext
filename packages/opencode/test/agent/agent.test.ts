@@ -4,6 +4,7 @@ import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { Agent } from "../../src/agent/agent"
 import { PermissionNext } from "../../src/permission/next"
+import { AGENT_PROFILE_MANIFEST } from "../../src/agent/agent-profiles"
 
 // Helper to evaluate permission for a tool with wildcard pattern
 function evalPerm(agent: Agent.Info | undefined, permission: string): PermissionNext.Action | undefined {
@@ -679,15 +680,11 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
         build: { disable: true },
         coding: { disable: true },
         plan: { disable: true },
-        research: { disable: true },
-        socratic: { disable: true },
-        "cv-review": { disable: true },
-        brainstorm: { disable: true },
-        tutor: { disable: true },
-        educator: { disable: true },
+        researcher: { disable: true },
+        teacher: { disable: true },
         ideator: { disable: true },
-        "deep-researcher": { disable: true },
-        "code-expert": { disable: true },
+        career: { disable: true },
+        codeexpert: { disable: true },
         compaction: { disable: true },
         title: { disable: true },
         summary: { disable: true },
@@ -699,6 +696,168 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
     fn: async () => {
       // all visible primary-capable agents are disabled
       await expect(Agent.defaultAgent()).rejects.toThrow("no primary visible agent found")
+    },
+  })
+})
+
+// === OpenContext consolidated agent tests ===
+
+test("researcher agent has correct properties and permissions", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const researcher = await Agent.get("researcher")
+      expect(researcher).toBeDefined()
+      expect(researcher?.mode).toBe("primary")
+      expect(researcher?.native).toBe(true)
+      expect(researcher?.temperature).toBe(0.2)
+      expect(researcher?.color).toBe("#10b981")
+      // Research tools allowed
+      expect(evalPerm(researcher, "websearch")).toBe("allow")
+      expect(evalPerm(researcher, "webfetch")).toBe("allow")
+      expect(evalPerm(researcher, "read")).toBe("allow")
+      expect(evalPerm(researcher, "context_store")).toBe("allow")
+      // Destructive tools denied
+      expect(evalPerm(researcher, "edit")).toBe("deny")
+      expect(evalPerm(researcher, "bash")).toBe("deny")
+    },
+  })
+})
+
+test("teacher agent has correct properties and permissions", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const teacher = await Agent.get("teacher")
+      expect(teacher).toBeDefined()
+      expect(teacher?.mode).toBe("primary")
+      expect(teacher?.native).toBe(true)
+      expect(teacher?.temperature).toBe(0.4)
+      expect(teacher?.color).toBe("#8b5cf6")
+      // Teaching tools allowed
+      expect(evalPerm(teacher, "websearch")).toBe("allow")
+      expect(evalPerm(teacher, "read")).toBe("allow")
+      expect(evalPerm(teacher, "context_store")).toBe("allow")
+      // Destructive tools denied
+      expect(evalPerm(teacher, "edit")).toBe("deny")
+      expect(evalPerm(teacher, "bash")).toBe("deny")
+    },
+  })
+})
+
+test("ideator agent has correct properties and high temperature", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const ideator = await Agent.get("ideator")
+      expect(ideator).toBeDefined()
+      expect(ideator?.mode).toBe("primary")
+      expect(ideator?.native).toBe(true)
+      expect(ideator?.temperature).toBe(0.8)
+      expect(ideator?.color).toBe("#a855f7")
+      // Creative tools allowed
+      expect(evalPerm(ideator, "websearch")).toBe("allow")
+      expect(evalPerm(ideator, "read")).toBe("allow")
+      expect(evalPerm(ideator, "write")).toBe("deny")
+      expect(evalPerm(ideator, "context_store")).toBe("allow")
+      // Code editing denied
+      expect(evalPerm(ideator, "edit")).toBe("deny")
+      expect(evalPerm(ideator, "bash")).toBe("deny")
+    },
+  })
+})
+
+test("career agent has correct properties and permissions", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const career = await Agent.get("career")
+      expect(career).toBeDefined()
+      expect(career?.mode).toBe("primary")
+      expect(career?.native).toBe(true)
+      expect(career?.temperature).toBe(0.3)
+      expect(career?.color).toBe("#f59e0b")
+      // Document tools allowed
+      expect(evalPerm(career, "read")).toBe("allow")
+      expect(evalPerm(career, "write")).toBe("allow")
+      expect(evalPerm(career, "context_store")).toBe("allow")
+      // Code tools denied
+      expect(evalPerm(career, "edit")).toBe("deny")
+      expect(evalPerm(career, "bash")).toBe("deny")
+    },
+  })
+})
+
+test("codeexpert agent has correct properties and full permissions", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const codeexpert = await Agent.get("codeexpert")
+      expect(codeexpert).toBeDefined()
+      expect(codeexpert?.mode).toBe("primary")
+      expect(codeexpert?.native).toBe(true)
+      expect(codeexpert?.temperature).toBe(0.2)
+      expect(codeexpert?.color).toBe("#f97316")
+      // Full code access
+      expect(evalPerm(codeexpert, "read")).toBe("allow")
+      expect(evalPerm(codeexpert, "write")).toBe("allow")
+      expect(evalPerm(codeexpert, "edit")).toBe("allow")
+      expect(evalPerm(codeexpert, "bash")).toBe("allow")
+      expect(evalPerm(codeexpert, "context_store")).toBe("allow")
+    },
+  })
+})
+
+test("legacy agent names resolve to canonical agents", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      expect((await Agent.get("research"))?.name).toBe("researcher")
+      expect((await Agent.get("deep-researcher"))?.name).toBe("researcher")
+      expect((await Agent.get("socratic"))?.name).toBe("teacher")
+      expect((await Agent.get("tutor"))?.name).toBe("teacher")
+      expect((await Agent.get("educator"))?.name).toBe("teacher")
+      expect((await Agent.get("brainstorm"))?.name).toBe("ideator")
+      expect((await Agent.get("cv-review"))?.name).toBe("career")
+      expect((await Agent.get("code-expert"))?.name).toBe("codeexpert")
+    },
+  })
+})
+
+test("Agent.resolve exposes deprecation metadata for legacy aliases", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const resolved = await Agent.resolve("socratic")
+      expect(resolved.agent?.name).toBe("teacher")
+      expect(resolved.canonical).toBe("teacher")
+      expect(resolved.deprecated?.from).toBe("socratic")
+      expect(resolved.deprecated?.to).toBe("teacher")
+      expect(resolved.deprecated?.message).toContain("deprecated")
+    },
+  })
+})
+
+test("specialist agents include manifest-driven profile metadata", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      for (const [name, profile] of Object.entries(AGENT_PROFILE_MANIFEST)) {
+        const agent = await Agent.get(name)
+        expect(agent).toBeDefined()
+        expect(agent?.options?.profile).toBeDefined()
+        expect(agent?.options?.profile?.defaultMode).toBe(profile.defaultMode)
+        expect(agent?.options?.profile?.capabilities).toEqual(profile.capabilities)
+        expect(agent?.options?.profile?.handoffs).toEqual(profile.handoffs)
+      }
     },
   })
 })

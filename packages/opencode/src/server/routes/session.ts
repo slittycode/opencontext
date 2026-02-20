@@ -16,6 +16,12 @@ import { Log } from "../../util/log"
 import { PermissionNext } from "@/permission/next"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import {
+  ContextManifestEntry,
+  listContextEntries,
+  readContextEntry,
+  searchContextEntries,
+} from "@/context-store/service"
 
 const log = Log.create({ service: "server" })
 
@@ -180,6 +186,105 @@ export const SessionRoutes = lazy(() =>
         const sessionID = c.req.valid("param").sessionID
         const todos = await Todo.get(sessionID)
         return c.json(todos)
+      },
+    )
+    .get(
+      "/:sessionID/context",
+      describeRoute({
+        summary: "List context entries",
+        description: "List or search read-only context-store entries for the current project directory.",
+        operationId: "session.context.list",
+        responses: {
+          200: {
+            description: "Context entries",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    entries: ContextManifestEntry.array(),
+                    query: z.string().optional(),
+                    category: z.string().optional(),
+                  }),
+                ),
+              },
+            },
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          sessionID: z.string().meta({ description: "Session ID" }),
+        }),
+      ),
+      validator(
+        "query",
+        z.object({
+          query: z.string().optional(),
+          category: z.string().optional(),
+          limit: z.coerce.number().int().positive().optional(),
+        }),
+      ),
+      async (c) => {
+        const query = c.req.valid("query")
+        const entries = query.query
+          ? await searchContextEntries({
+              query: query.query,
+              category: query.category,
+            })
+          : await listContextEntries({
+              category: query.category,
+            })
+
+        return c.json({
+          entries: query.limit ? entries.slice(0, query.limit) : entries,
+          query: query.query,
+          category: query.category,
+        })
+      },
+    )
+    .get(
+      "/:sessionID/context/read",
+      describeRoute({
+        summary: "Read context entry",
+        description: "Read a single context-store entry content by path.",
+        operationId: "session.context.read",
+        responses: {
+          200: {
+            description: "Context entry content",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    path: z.string(),
+                    content: z.string(),
+                  }),
+                ),
+              },
+            },
+          },
+          ...errors(400, 404),
+        },
+      }),
+      validator(
+        "param",
+        z.object({
+          sessionID: z.string().meta({ description: "Session ID" }),
+        }),
+      ),
+      validator(
+        "query",
+        z.object({
+          path: z.string(),
+        }),
+      ),
+      async (c) => {
+        const query = c.req.valid("query")
+        const result = await readContextEntry({
+          entryPath: query.path,
+        })
+        return c.json(result)
       },
     )
     .post(

@@ -1,63 +1,14 @@
 import z from "zod"
-import path from "path"
-import fs from "fs/promises"
 import { Tool } from "./tool"
-import { Instance } from "../project/instance"
 import DESCRIPTION from "./context-store.txt"
-
-/**
- * Manifest schema for the .context/ directory.
- * Tracks metadata about each knowledge entry.
- */
-const ManifestEntry = z.object({
-  path: z.string(),
-  title: z.string(),
-  category: z.string(),
-  tags: z.array(z.string()).default([]),
-  createdAt: z.number(),
-  updatedAt: z.number(),
-  createdBy: z.string().optional(),
-  summary: z.string().optional(),
-})
-type ManifestEntry = z.infer<typeof ManifestEntry>
-
-const Manifest = z.object({
-  version: z.literal(1),
-  entries: z.array(ManifestEntry),
-})
-type Manifest = z.infer<typeof Manifest>
-
-function contextDir(): string {
-  return path.join(Instance.directory, ".context")
-}
-
-function manifestPath(): string {
-  return path.join(contextDir(), "manifest.json")
-}
-
-async function readManifest(): Promise<Manifest> {
-  try {
-    const raw = await Bun.file(manifestPath()).text()
-    return Manifest.parse(JSON.parse(raw))
-  } catch {
-    return { version: 1, entries: [] }
-  }
-}
-
-async function writeManifest(manifest: Manifest): Promise<void> {
-  const dir = contextDir()
-  await fs.mkdir(dir, { recursive: true })
-  await Bun.write(manifestPath(), JSON.stringify(manifest, null, 2))
-}
-
-function toKebabCase(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-}
+import {
+  contextDir,
+  deleteContextEntry,
+  listContextEntries,
+  readContextEntry,
+  saveContextEntry,
+  searchContextEntries,
+} from "@/context-store/service"
 
 export const ContextStoreTool = Tool.define("context_store", {
   description: DESCRIPTION,
@@ -84,15 +35,15 @@ export const ContextStoreTool = Tool.define("context_store", {
     const result = await (async () => {
       switch (params.operation) {
         case "save":
-          return await handleSave(params, ctx)
+          return handleSave(params, ctx)
         case "search":
-          return await handleSearch(params)
+          return handleSearch(params)
         case "list":
-          return await handleList(params)
+          return handleList(params)
         case "read":
-          return await handleRead(params)
+          return handleRead(params)
         case "delete":
-          return await handleDelete(params)
+          return handleDelete(params)
         default:
           return {
             title: "Error",
@@ -101,6 +52,7 @@ export const ContextStoreTool = Tool.define("context_store", {
           }
       }
     })()
+
     return {
       title: result.title,
       output: result.output,
@@ -120,56 +72,18 @@ async function handleSave(
     return { title: "Error", output: "content is required for save operation", metadata: {} }
   }
 
-  const category = params.category ?? "general"
-  const filename = toKebabCase(params.title) + ".md"
-  const relativePath = path.join(category, filename)
-  const fullPath = path.join(contextDir(), relativePath)
-
-  // Ensure the category directory exists
-  await fs.mkdir(path.dirname(fullPath), { recursive: true })
-
-  // Build the frontmatter
-  const now = Date.now()
-  const frontmatter = [
-    "---",
-    `title: "${params.title}"`,
-    `category: "${category}"`,
-    `created: ${new Date(now).toISOString()}`,
-    `updated: ${new Date(now).toISOString()}`,
-    ...(params.tags?.length ? [`tags: [${params.tags.map((t) => `"${t}"`).join(", ")}]`] : []),
-    `agent: "${ctx.agent}"`,
-    "---",
-    "",
-  ].join("\n")
-
-  await Bun.write(fullPath, frontmatter + params.content)
-
-  // Update manifest
-  const manifest = await readManifest()
-  const existingIdx = manifest.entries.findIndex((e) => e.path === relativePath)
-  const entry: ManifestEntry = {
-    path: relativePath,
+  const entry = await saveContextEntry({
     title: params.title,
-    category,
-    tags: params.tags ?? [],
-    createdAt: existingIdx >= 0 ? manifest.entries[existingIdx].createdAt : now,
-    updatedAt: now,
+    content: params.content,
+    category: params.category,
+    tags: params.tags,
     createdBy: ctx.agent,
-    summary: params.content.slice(0, 200),
-  }
-
-  if (existingIdx >= 0) {
-    manifest.entries[existingIdx] = entry
-  } else {
-    manifest.entries.push(entry)
-  }
-
-  await writeManifest(manifest)
+  })
 
   return {
-    title: `Saved: ${relativePath}`,
-    output: `Knowledge entry saved to .context/${relativePath}\nCategory: ${category}\nTags: ${(params.tags ?? []).join(", ") || "none"}`,
-    metadata: { path: relativePath, operation: "save" },
+    title: `Saved: ${entry.path}`,
+    output: `Knowledge entry saved to .context/${entry.path}\nCategory: ${entry.category}\nTags: ${entry.tags.join(", ") || "none"}`,
+    metadata: { path: entry.path, operation: "save" },
   }
 }
 
@@ -178,39 +92,12 @@ async function handleSearch(params: { query?: string; category?: string }) {
     return { title: "Error", output: "query is required for search operation", metadata: {} }
   }
 
-  const manifest = await readManifest()
-  const queryLower = params.query.toLowerCase()
-
-  // Search manifest metadata first
-  const metadataMatches = manifest.entries.filter((entry) => {
-    if (params.category && entry.category !== params.category) return false
-    return (
-      entry.title.toLowerCase().includes(queryLower) ||
-      entry.tags.some((t) => t.toLowerCase().includes(queryLower)) ||
-      entry.category.toLowerCase().includes(queryLower) ||
-      (entry.summary?.toLowerCase().includes(queryLower) ?? false)
-    )
+  const matches = await searchContextEntries({
+    query: params.query,
+    category: params.category,
   })
 
-  // Also do full-text search on files
-  const contentMatches: ManifestEntry[] = []
-  for (const entry of manifest.entries) {
-    if (metadataMatches.includes(entry)) continue
-    if (params.category && entry.category !== params.category) continue
-    try {
-      const fullPath = path.join(contextDir(), entry.path)
-      const content = await Bun.file(fullPath).text()
-      if (content.toLowerCase().includes(queryLower)) {
-        contentMatches.push(entry)
-      }
-    } catch {
-      // File may have been deleted outside the tool
-    }
-  }
-
-  const allMatches = [...metadataMatches, ...contentMatches]
-
-  if (allMatches.length === 0) {
+  if (matches.length === 0) {
     return {
       title: "No results",
       output: `No knowledge entries found matching "${params.query}"`,
@@ -218,25 +105,20 @@ async function handleSearch(params: { query?: string; category?: string }) {
     }
   }
 
-  const lines = allMatches.map(
-    (e) =>
-      `- **${e.title}** (.context/${e.path})\n  Category: ${e.category} | Tags: ${e.tags.join(", ") || "none"} | Updated: ${new Date(e.updatedAt).toISOString().split("T")[0]}`,
+  const lines = matches.map(
+    (entry) =>
+      `- **${entry.title}** (.context/${entry.path})\n  Category: ${entry.category} | Tags: ${entry.tags.join(", ") || "none"} | Updated: ${new Date(entry.updatedAt).toISOString().split("T")[0]}`,
   )
 
   return {
-    title: `${allMatches.length} results`,
-    output: `Found ${allMatches.length} entries matching "${params.query}":\n\n${lines.join("\n")}`,
-    metadata: { matches: allMatches.length },
+    title: `${matches.length} results`,
+    output: `Found ${matches.length} entries matching "${params.query}":\n\n${lines.join("\n")}`,
+    metadata: { matches: matches.length },
   }
 }
 
 async function handleList(params: { category?: string }) {
-  const manifest = await readManifest()
-  let entries = manifest.entries
-
-  if (params.category) {
-    entries = entries.filter((e) => e.category === params.category)
-  }
+  const entries = await listContextEntries({ category: params.category })
 
   if (entries.length === 0) {
     const suffix = params.category ? ` in category "${params.category}"` : ""
@@ -247,12 +129,11 @@ async function handleList(params: { category?: string }) {
     }
   }
 
-  // Group by category
-  const grouped = new Map<string, ManifestEntry[]>()
+  const grouped = new Map<string, typeof entries>()
   for (const entry of entries) {
-    const list = grouped.get(entry.category) ?? []
-    list.push(entry)
-    grouped.set(entry.category, list)
+    const bucket = grouped.get(entry.category) ?? []
+    bucket.push(entry)
+    grouped.set(entry.category, bucket)
   }
 
   const sections: string[] = []
@@ -260,8 +141,8 @@ async function handleList(params: { category?: string }) {
     const lines = items
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map(
-        (e) =>
-          `  - ${e.title} (${e.tags.join(", ") || "no tags"}) — ${new Date(e.updatedAt).toISOString().split("T")[0]}`,
+        (entry) =>
+          `  - ${entry.title} (${entry.tags.join(", ") || "no tags"}) — ${new Date(entry.updatedAt).toISOString().split("T")[0]}`,
       )
     sections.push(`### ${category}\n${lines.join("\n")}`)
   }
@@ -278,18 +159,15 @@ async function handleRead(params: { path?: string }) {
     return { title: "Error", output: "path is required for read operation", metadata: {} }
   }
 
-  // Normalize: strip leading .context/ if user included it
-  const cleanPath = params.path.replace(/^\.context\//, "")
-  const fullPath = path.join(contextDir(), cleanPath)
-
   try {
-    const content = await Bun.file(fullPath).text()
+    const entry = await readContextEntry({ entryPath: params.path })
     return {
-      title: `Read: ${cleanPath}`,
-      output: content,
-      metadata: { path: cleanPath, operation: "read" },
+      title: `Read: ${entry.path}`,
+      output: entry.content,
+      metadata: { path: entry.path, operation: "read" },
     }
   } catch {
+    const cleanPath = params.path.replace(/^\.context\//, "")
     return {
       title: "Not found",
       output: `No knowledge entry found at .context/${cleanPath}`,
@@ -303,27 +181,22 @@ async function handleDelete(params: { path?: string }) {
     return { title: "Error", output: "path is required for delete operation", metadata: {} }
   }
 
-  const cleanPath = params.path.replace(/^\.context\//, "")
-  const fullPath = path.join(contextDir(), cleanPath)
-
   try {
-    await fs.unlink(fullPath)
+    const cleanPath = await deleteContextEntry({ entryPath: params.path })
+    return {
+      title: `Deleted: ${cleanPath}`,
+      output: `Knowledge entry removed from .context/${cleanPath}`,
+      metadata: { path: cleanPath, operation: "delete" },
+    }
   } catch {
+    const cleanPath = params.path.replace(/^\.context\//, "")
     return {
       title: "Not found",
       output: `No knowledge entry found at .context/${cleanPath}`,
       metadata: { path: cleanPath },
     }
   }
-
-  // Update manifest
-  const manifest = await readManifest()
-  manifest.entries = manifest.entries.filter((e) => e.path !== cleanPath)
-  await writeManifest(manifest)
-
-  return {
-    title: `Deleted: ${cleanPath}`,
-    output: `Knowledge entry removed from .context/${cleanPath}`,
-    metadata: { path: cleanPath, operation: "delete" },
-  }
 }
+
+// Re-export path helper for UI-oriented diagnostics or future routes.
+export { contextDir }

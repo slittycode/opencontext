@@ -1,6 +1,13 @@
 export namespace Locale {
+  const TITLECASE_OVERRIDES: Record<string, string> = {
+    codeexpert: "Code Expert",
+  }
+
   export function titlecase(str: string) {
-    return str.replace(/\b\w/g, (c) => c.toUpperCase())
+    const key = str.toLowerCase()
+    const override = TITLECASE_OVERRIDES[key]
+    if (override) return override
+    return str.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   }
 
   export function time(input: number): string {
