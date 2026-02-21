@@ -1,4 +1,4 @@
-import { For, onCleanup, Show, Match, Switch, createMemo, createEffect, on } from "solid-js"
+import { For, onCleanup, Show, Match, Switch, createMemo, createEffect, on, createComputed } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { Dynamic } from "solid-js/web"
@@ -528,24 +528,50 @@ export default function Page() {
     )
   }
 
-  const emptyUserMessages: UserMessage[] = []
-  const userMessages = createMemo(
-    () => messages().filter((m) => m.role === "user") as UserMessage[],
-    emptyUserMessages,
-    { equals: same },
-  )
-  const visibleUserMessages = createMemo(
+  const [store, setStore] = createStore({
+    activeDraggable: undefined as string | undefined,
+    activeTerminalDraggable: undefined as string | undefined,
+    expanded: {} as Record<string, boolean>,
+    messageId: undefined as string | undefined,
+    turnStart: 0,
+    mobileTab: "session" as "session" | "changes",
+    changes: "session" as "session" | "turn",
+    newSessionWorktree: "main",
+    promptHeight: 0,
+  })
+
+  const parsedMessages = createMemo(
     () => {
+      const all = messages()
       const revert = revertMessageID()
-      if (!revert) return userMessages()
-      return userMessages().filter((m) => m.id < revert)
+      const start = store.turnStart
+      
+      const user: UserMessage[] = []
+      const visible: UserMessage[] = []
+      const rendered: UserMessage[] = []
+      
+      for (const msg of all) {
+        if (msg.role !== "user") continue
+        user.push(msg as UserMessage)
+        if (!revert || msg.id < revert) {
+          visible.push(msg as UserMessage)
+          if (visible.length > start) {
+            rendered.push(msg as UserMessage)
+          }
+        }
+      }
+      return { user, visible, rendered, lastUser: visible.at(-1) }
     },
-    emptyUserMessages,
+    { user: [], visible: [], rendered: [], lastUser: undefined },
     {
-      equals: same,
-    },
+      equals: (a, b) => same(a.user, b.user) && same(a.visible, b.visible) && same(a.rendered, b.rendered)
+    }
   )
-  const lastUserMessage = createMemo(() => visibleUserMessages().at(-1))
+
+  const userMessages = () => parsedMessages().user
+  const visibleUserMessages = () => parsedMessages().visible
+  const renderedUserMessages = () => parsedMessages().rendered
+  const lastUserMessage = () => parsedMessages().lastUser
 
   createEffect(
     on(
@@ -559,34 +585,8 @@ export default function Page() {
     ),
   )
 
-  const [store, setStore] = createStore({
-    activeDraggable: undefined as string | undefined,
-    activeTerminalDraggable: undefined as string | undefined,
-    expanded: {} as Record<string, boolean>,
-    messageId: undefined as string | undefined,
-    turnStart: 0,
-    mobileTab: "session" as "session" | "changes",
-    changes: "session" as "session" | "turn",
-    newSessionWorktree: "main",
-    promptHeight: 0,
-  })
-
   const turnDiffs = createMemo(() => lastUserMessage()?.summary?.diffs ?? [])
   const reviewDiffs = createMemo(() => (store.changes === "session" ? diffs() : turnDiffs()))
-
-  const renderedUserMessages = createMemo(
-    () => {
-      const msgs = visibleUserMessages()
-      const start = store.turnStart
-      if (start <= 0) return msgs
-      if (start >= msgs.length) return emptyUserMessages
-      return msgs.slice(start)
-    },
-    emptyUserMessages,
-    {
-      equals: same,
-    },
-  )
 
   const newSessionWorktree = createMemo(() => {
     if (store.newSessionWorktree === "create") return "create"

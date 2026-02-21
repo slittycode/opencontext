@@ -2,8 +2,15 @@
   "$schema": "https://turborepo.com/schema.json",
   "globalEnv": ["CI", "OPENCODE_DISABLE_SHARE"],
   "globalPassThroughEnv": ["CI", "OPENCODE_DISABLE_SHARE"],
+  "cacheDir": ".turbo/cache",
   "tasks": {
     "typecheck": {},
+    "lint": {
+      "outputs": []
+    },
+    "format": {
+      "outputs": []
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

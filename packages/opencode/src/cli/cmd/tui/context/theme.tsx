@@ -359,13 +359,11 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
     const subtleSyntax = createMemo(() => generateSubtleSyntax(values()))
 
     return {
-      theme: new Proxy(values(), {
-        get(_target, prop) {
-          // FIXME: TypeScript struggles with Proxy return types when accessing dynamically computed store keys here.
-          // @ts-expect-error
-          return values()[prop]
+      theme: new Proxy(values() as any, {
+        get(target, prop: keyof Theme) {
+          return target[prop];
         },
-      }),
+      }) as Theme,
       get selected() {
         return store.active
       },

@@ -738,14 +738,14 @@ export namespace Provider {
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
       if (existing) {
-        // FIXME: remeda mergeDeep has poor type inference for this complex nested object
+        // FIXME: remeda mergeDeep has poor type inference for this complex nested object. A custom recursive partial deep merge utility might be needed here to resolve types.
         // @ts-expect-error
         providers[providerID] = mergeDeep(existing, provider)
         return
       }
       const match = database[providerID]
       if (!match) return
-      // FIXME: remeda mergeDeep has poor type inference for this complex nested object
+      // FIXME: remeda mergeDeep has poor type inference for this complex nested object. A custom recursive partial deep merge utility might be needed here to resolve types.
       // @ts-expect-error
       providers[providerID] = mergeDeep(match, provider)
     }
