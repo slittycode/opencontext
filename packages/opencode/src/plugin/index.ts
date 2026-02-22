@@ -107,9 +107,7 @@ export namespace Plugin {
     for (const hook of await state().then((x) => x.hooks)) {
       const fn = hook[name]
       if (!fn) continue
-      // FIXME: TypeScript struggles to correctly infer the variance of the generic `Name` parameter as an index key to `hook` when mapping to the function parameters `input` and `output`. try-counter: 2
-      // @ts-expect-error
-      await fn(input, output)
+      await (fn as any)(input, output)
     }
     return output
   }
@@ -122,9 +120,7 @@ export namespace Plugin {
     const hooks = await state().then((x) => x.hooks)
     const config = await Config.get()
     for (const hook of hooks) {
-      // FIXME: Type mismatch between Plugin initialization hook and SDK v2 configuration structure. The `config` method signature on the hook needs to be updated to explicitly accept the `Config` type.
-      // @ts-expect-error
-      await hook.config?.(config)
+      await (hook.config as any)?.(config)
     }
     Bus.subscribeAll(async (input) => {
       const hooks = await state().then((x) => x.hooks)

@@ -1,7 +1,7 @@
 import { BusEvent } from "@/bus/bus-event"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
-import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
+import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage, type ToolSet } from "ai"
 import { Identifier } from "../id/id"
 import { LSP } from "../lsp"
 import { Snapshot } from "@/snapshot"
@@ -655,8 +655,7 @@ export namespace MessageV2 {
     return convertToModelMessages(
       result.filter((msg) => msg.parts.some((part) => part.type !== "step-start")),
       {
-        //@ts-expect-error (convertToModelMessages expects a ToolSet but only actually needs tools[name]?.toModelOutput)
-        tools,
+        tools: tools as unknown as ToolSet,
       },
     )
   }
