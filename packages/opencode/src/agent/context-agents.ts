@@ -24,6 +24,7 @@ import PROMPT_JOB_HUNTER from "./prompt/job-hunter.txt"
 import PROMPT_INTERVIEW_COACH from "./prompt/interview-coach.txt"
 import PROMPT_NETWORK_CATALYST from "./prompt/network-catalyst.txt"
 import PROMPT_LEARNING_ARCHITECT from "./prompt/learning-architect.txt"
+import PROMPT_CAREER_FRAMEWORK from "./prompt/career-framework.txt"
 
 type AgentFactory = (
   defaults: PermissionNext.Rule[],
@@ -262,12 +263,13 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         question: "allow",
         context_store: "allow",
         task: "allow",
+        career_memory: "allow",
       }),
       user,
     ),
-    prompt: PROMPT_CAREER_STRATEGIST,
+    prompt: PROMPT_CAREER_STRATEGIST + "\n\n" + PROMPT_CAREER_FRAMEWORK,
     options: {},
-    mode: "primary",
+    mode: "all",
     native: true,
     color: "#d946ef", // fuchsia
   },
@@ -286,12 +288,13 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         question: "allow",
         context_store: "allow",
         task: "allow",
+        career_memory: "allow",
       }),
       user,
     ),
-    prompt: PROMPT_JOB_HUNTER,
+    prompt: PROMPT_JOB_HUNTER + "\n\n" + PROMPT_CAREER_FRAMEWORK,
     options: {},
-    mode: "primary",
+    mode: "all",
     native: true,
     color: "#f43f5e", // rose
   },
@@ -309,13 +312,14 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         webfetch: "allow",
         question: "allow",
         context_store: "allow",
-        task: "deny",
+        task: "allow",
+        career_memory: "allow",
       }),
       user,
     ),
-    prompt: PROMPT_INTERVIEW_COACH,
+    prompt: PROMPT_INTERVIEW_COACH + "\n\n" + PROMPT_CAREER_FRAMEWORK,
     options: {},
-    mode: "primary",
+    mode: "all",
     native: true,
     color: "#84cc16", // lime
   },
@@ -338,9 +342,9 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
       }),
       user,
     ),
-    prompt: PROMPT_NETWORK_CATALYST,
+    prompt: PROMPT_NETWORK_CATALYST + "\n\n" + PROMPT_CAREER_FRAMEWORK,
     options: {},
-    mode: "primary",
+    mode: "all",
     native: true,
     color: "#eab308", // yellow
   },
@@ -362,9 +366,9 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
       }),
       user,
     ),
-    prompt: PROMPT_LEARNING_ARCHITECT,
+    prompt: PROMPT_LEARNING_ARCHITECT + "\n\n" + PROMPT_CAREER_FRAMEWORK,
     options: {},
-    mode: "primary",
+    mode: "all",
     native: true,
     color: "#0ea5e9", // sky
   },
