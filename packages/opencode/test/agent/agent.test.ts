@@ -694,6 +694,8 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
         "career-strategist": { disable: true },
         "job-hunter": { disable: true },
         "interview-coach": { disable: true },
+        "network-catalyst": { disable: true },
+        "learning-architect": { disable: true },
         companion: { disable: true },
       },
     },

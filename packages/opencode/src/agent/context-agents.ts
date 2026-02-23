@@ -22,6 +22,8 @@ import PROMPT_COMPANION from "./prompt/companion.txt"
 import PROMPT_CAREER_STRATEGIST from "./prompt/career-strategist.txt"
 import PROMPT_JOB_HUNTER from "./prompt/job-hunter.txt"
 import PROMPT_INTERVIEW_COACH from "./prompt/interview-coach.txt"
+import PROMPT_NETWORK_CATALYST from "./prompt/network-catalyst.txt"
+import PROMPT_LEARNING_ARCHITECT from "./prompt/learning-architect.txt"
 
 type AgentFactory = (
   defaults: PermissionNext.Rule[],
@@ -316,6 +318,55 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
     mode: "primary",
     native: true,
     color: "#84cc16", // lime
+  },
+
+  "network-catalyst": {
+    name: "network-catalyst",
+    description: "Network Catalyst. Relationship mapping, cold outreach, and hidden market strategies.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        read: "allow",
+        write: "allow",
+        edit: "deny",
+        bash: "deny",
+        websearch: "allow",
+        webfetch: "allow",
+        question: "allow",
+        context_store: "allow",
+        task: "allow",
+      }),
+      user,
+    ),
+    prompt: PROMPT_NETWORK_CATALYST,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#eab308", // yellow
+  },
+  "learning-architect": {
+    name: "learning-architect",
+    description: "Learning Architect. Skill gap analysis, curriculum design, and upskilling timelines.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        read: "allow",
+        write: "allow",
+        edit: "deny",
+        bash: "deny",
+        websearch: "allow",
+        webfetch: "allow",
+        question: "allow",
+        context_store: "allow",
+        task: "allow",
+      }),
+      user,
+    ),
+    prompt: PROMPT_LEARNING_ARCHITECT,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#0ea5e9", // sky
   },
 
   // === Companion Agent: Persistent session memory ===
