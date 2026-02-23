@@ -691,6 +691,10 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
         compaction: { disable: true },
         title: { disable: true },
         summary: { disable: true },
+        "career-strategist": { disable: true },
+        "job-hunter": { disable: true },
+        "interview-coach": { disable: true },
+        companion: { disable: true },
       },
     },
   })

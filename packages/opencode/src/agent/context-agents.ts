@@ -19,6 +19,9 @@ import PROMPT_IDEATOR from "./prompt/ideator.txt"
 import PROMPT_DEEP_RESEARCHER from "./prompt/deep-researcher.txt"
 import PROMPT_CODE_EXPERT from "./prompt/code-expert.txt"
 import PROMPT_COMPANION from "./prompt/companion.txt"
+import PROMPT_CAREER_STRATEGIST from "./prompt/career-strategist.txt"
+import PROMPT_JOB_HUNTER from "./prompt/job-hunter.txt"
+import PROMPT_INTERVIEW_COACH from "./prompt/interview-coach.txt"
 
 type AgentFactory = (
   defaults: PermissionNext.Rule[],
@@ -159,6 +162,7 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         webfetch: "allow",
         question: "allow",
         context_store: "allow",
+        task: "allow",
       }),
       user,
     ),
@@ -182,6 +186,7 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         webfetch: "allow",
         question: "allow",
         context_store: "allow",
+        task: "allow",
       }),
       user,
     ),
@@ -205,6 +210,7 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
         webfetch: "allow",
         question: "allow",
         context_store: "allow",
+        task: "allow",
       }),
       user,
     ),
@@ -236,6 +242,80 @@ export const contextAgents: AgentFactory = (defaults, user, merge, fromConfig) =
     mode: "primary",
     native: true,
     color: "#f97316",
+  },
+
+  // === Career Advice & Job Hunting Agents ===
+  "career-strategist": {
+    name: "career-strategist",
+    description: "Career Strategist. Long-term professional trajectories, market trends, and ROI analysis.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        read: "allow",
+        write: "allow",
+        edit: "deny",
+        bash: "deny",
+        websearch: "allow",
+        webfetch: "allow",
+        question: "allow",
+        context_store: "allow",
+        task: "allow",
+      }),
+      user,
+    ),
+    prompt: PROMPT_CAREER_STRATEGIST,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#d946ef", // fuchsia
+  },
+  "job-hunter": {
+    name: "job-hunter",
+    description: "Job Hunter. Active job search, application tracking, and company due diligence.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        read: "allow",
+        write: "allow",
+        edit: "deny",
+        bash: "allow", // For potential scraping/analysis tools
+        websearch: "allow",
+        webfetch: "allow",
+        question: "allow",
+        context_store: "allow",
+        task: "allow",
+      }),
+      user,
+    ),
+    prompt: PROMPT_JOB_HUNTER,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#f43f5e", // rose
+  },
+  "interview-coach": {
+    name: "interview-coach",
+    description: "Interview Coach. Active roleplayer, critiques communication, enforces STAR method.",
+    permission: merge(
+      defaults,
+      fromConfig({
+        read: "allow",
+        write: "deny",
+        edit: "deny",
+        bash: "deny",
+        websearch: "allow",
+        webfetch: "allow",
+        question: "allow",
+        context_store: "allow",
+        task: "deny",
+      }),
+      user,
+    ),
+    prompt: PROMPT_INTERVIEW_COACH,
+    options: {},
+    mode: "primary",
+    native: true,
+    color: "#84cc16", // lime
   },
 
   // === Companion Agent: Persistent session memory ===
