@@ -153,11 +153,7 @@ export namespace Config {
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (
-        dir.endsWith(".opencontext") ||
-        dir.endsWith(".opencode") ||
-        dir === Flag.OPENCODE_CONFIG_DIR
-      ) {
+      if (dir.endsWith(".opencontext") || dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
         for (const file of PROJECT_CONFIG_FILES) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
@@ -1208,6 +1204,34 @@ export namespace Config {
             .describe("Timeout in milliseconds for model context protocol (MCP) requests"),
         })
         .optional(),
+      career: z
+        .object({
+          memory: z
+            .object({
+              enabled: z.boolean().default(true),
+              tiering: z
+                .object({
+                  core: z.object({ retention: z.number().default(-1) }),
+                  status: z.object({ retentionDays: z.number().default(30) }),
+                  recent: z.object({ retentionDays: z.number().default(7) }),
+                  archive: z.object({
+                    retentionDays: z.number().default(365),
+                    summarizeAtDay: z.number().default(180),
+                  }),
+                })
+                .default({
+                  core: { retention: -1 },
+                  status: { retentionDays: 30 },
+                  recent: { retentionDays: 7 },
+                  archive: { retentionDays: 365, summarizeAtDay: 180 },
+                }),
+              timeDecayFactor: z.number().default(0.1),
+              maxCoreProfileChars: z.number().default(2000),
+              maxStatusChars: z.number().default(1000),
+            })
+            .optional(),
+        })
+        .optional(),
     })
     .strict()
     .meta({
@@ -1393,8 +1417,8 @@ export namespace Config {
   }
 
   function globalConfigFile() {
-    const candidates = ["opencontext.jsonc", "opencontext.json", "opencode.jsonc", "opencode.json", "config.json"].map((file) =>
-      path.join(Global.Path.config, file),
+    const candidates = ["opencontext.jsonc", "opencontext.json", "opencode.jsonc", "opencode.json", "config.json"].map(
+      (file) => path.join(Global.Path.config, file),
     )
     for (const file of candidates) {
       if (existsSync(file)) return file

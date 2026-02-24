@@ -28,6 +28,7 @@ import { Truncate } from "./truncation"
 import { PlanExitTool, PlanEnterTool } from "./plan"
 import { ApplyPatchTool } from "./apply_patch"
 import { ContextStoreTool } from "./context-store"
+import { CareerMemoryTool } from "./career-memory"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -114,6 +115,7 @@ export namespace ToolRegistry {
       ApplyPatchTool,
       // --- OpenContext extension: knowledge persistence tool ---
       ContextStoreTool,
+      CareerMemoryTool,
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool, PlanEnterTool] : []),
