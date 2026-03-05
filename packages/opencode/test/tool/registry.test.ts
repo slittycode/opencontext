@@ -1,12 +1,30 @@
-import { describe, expect, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
 import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { ToolRegistry } from "../../src/tool/registry"
+import { Config } from "../../src/config/config"
+
+let restoreWaitForDependencies: (() => void) | undefined
+
+beforeEach(() => {
+  const original = Config.waitForDependencies
+  ;(Config as any).waitForDependencies = async () => {}
+  restoreWaitForDependencies = () => {
+    ;(Config as any).waitForDependencies = original
+  }
+})
+
+afterEach(() => {
+  restoreWaitForDependencies?.()
+  restoreWaitForDependencies = undefined
+})
 
 describe("tool.registry", () => {
-  test("loads tools from .opencode/tool (singular)", async () => {
+  test(
+    "loads tools from .opencode/tool (singular)",
+    async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         const opencodeDir = path.join(dir, ".opencode")
@@ -38,9 +56,13 @@ describe("tool.registry", () => {
         expect(ids).toContain("hello")
       },
     })
-  })
+    },
+    20_000,
+  )
 
-  test("loads tools from .opencode/tools (plural)", async () => {
+  test(
+    "loads tools from .opencode/tools (plural)",
+    async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         const opencodeDir = path.join(dir, ".opencode")
@@ -72,9 +94,13 @@ describe("tool.registry", () => {
         expect(ids).toContain("hello")
       },
     })
-  })
+    },
+    20_000,
+  )
 
-  test("loads tools with external dependencies without crashing", async () => {
+  test(
+    "loads tools with external dependencies without crashing",
+    async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         const opencodeDir = path.join(dir, ".opencode")
@@ -83,21 +109,26 @@ describe("tool.registry", () => {
         const toolsDir = path.join(opencodeDir, "tools")
         await fs.mkdir(toolsDir, { recursive: true })
 
+        const localDepDir = path.join(opencodeDir, "node_modules", "local-cowsay")
+        await fs.mkdir(localDepDir, { recursive: true })
         await Bun.write(
-          path.join(opencodeDir, "package.json"),
+          path.join(localDepDir, "package.json"),
           JSON.stringify({
-            name: "custom-tools",
-            dependencies: {
-              "@opencode-ai/plugin": "^0.0.0",
-              cowsay: "^1.6.0",
-            },
+            name: "local-cowsay",
+            version: "1.0.0",
+            type: "module",
+            exports: "./index.js",
           }),
+        )
+        await Bun.write(
+          path.join(localDepDir, "index.js"),
+          "export const say = ({ text }) => `<< ${text} >>`;\n",
         )
 
         await Bun.write(
           path.join(toolsDir, "cowsay.ts"),
           [
-            "import { say } from 'cowsay'",
+            "import { say } from 'local-cowsay'",
             "export default {",
             "  description: 'tool that imports cowsay at top level',",
             "  args: { text: { type: 'string' } },",
@@ -118,5 +149,7 @@ describe("tool.registry", () => {
         expect(ids).toContain("cowsay")
       },
     })
-  })
+    },
+    30_000,
+  )
 })

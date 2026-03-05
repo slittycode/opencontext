@@ -1,15 +1,29 @@
-
 import { DialogSkill } from "../../dialog-skill"
 import { Editor } from "@tui/util/editor"
 import { Clipboard } from "../../../util/clipboard"
 import { DialogStash } from "../../dialog-stash"
-import { parsePatch } from "diff"
-import { Show } from "solid-js"
 
-export function usePromptCommands(props: any) {
-  const { command, input, autocomplete, store, setStore, props: promptProps, sdk, status, dialog, pasteImage, renderer, restoreExtmarksFromParts, stash, submit } = props
+export function usePromptCommands(args: any) {
+  const {
+    command,
+    input,
+    autocomplete,
+    store,
+    setStore,
+    props: promptProps,
+    sdk,
+    status,
+    dialog,
+    pasteImage,
+    renderer,
+    restoreExtmarksFromParts,
+    stash,
+    submit,
+  } = args
+  const getInput = () => (typeof input === "function" ? input() : input)
+  const getAutocomplete = () => (typeof autocomplete === "function" ? autocomplete() : autocomplete)
 
-    command.register(() => {
+  command.register(() => {
     return [
       {
         title: "Clear prompt",
@@ -17,8 +31,10 @@ export function usePromptCommands(props: any) {
         category: "Prompt",
         hidden: true,
         onSelect: (dialog: any) => {
-          input.extmarks.clear()
-          input.clear()
+          const currentInput = getInput()
+          if (!currentInput) return
+          currentInput.extmarks.clear()
+          currentInput.clear()
           dialog.clear()
         },
       },
@@ -29,7 +45,8 @@ export function usePromptCommands(props: any) {
         category: "Prompt",
         hidden: true,
         onSelect: (dialog: any) => {
-          if (!input.focused) return
+          const currentInput = getInput()
+          if (!currentInput?.focused) return
           submit()
           dialog.clear()
         },
@@ -59,14 +76,15 @@ export function usePromptCommands(props: any) {
         hidden: true,
         enabled: status().type !== "idle",
         onSelect: (dialog: any) => {
-          if (autocomplete.visible) return
-          if (!input.focused) return
+          if (getAutocomplete()?.visible) return
+          const currentInput = getInput()
+          if (!currentInput?.focused) return
           // TODO: this should be its own command
           if (store.mode === "shell") {
             setStore("mode", "normal")
             return
           }
-          if (!props.sessionID) return
+          if (!promptProps.sessionID) return
 
           setStore("interrupt", store.interrupt + 1)
 
@@ -76,7 +94,7 @@ export function usePromptCommands(props: any) {
 
           if (store.interrupt >= 2) {
             sdk.client.session.abort({
-              sessionID: props.sessionID,
+              sessionID: promptProps.sessionID,
             })
             setStore("interrupt", 0)
           }
@@ -108,7 +126,9 @@ export function usePromptCommands(props: any) {
           const content = await Editor.open({ value, renderer })
           if (!content) return
 
-          input.setText(content)
+          const currentInput = getInput()
+          if (!currentInput) return
+          currentInput.setText(content)
 
           // Update positions for nonTextParts based on their location in new content
           // Filter out parts whose virtual text was deleted
@@ -167,7 +187,7 @@ export function usePromptCommands(props: any) {
             parts: updatedNonTextParts,
           })
           restoreExtmarksFromParts(updatedNonTextParts)
-          input.cursorOffset = Bun.stringWidth(content)
+          currentInput.cursorOffset = Bun.stringWidth(content)
         },
       },
       {
@@ -181,12 +201,14 @@ export function usePromptCommands(props: any) {
           dialog.replace(() => (
             <DialogSkill
               onSelect={(skill: any) => {
-                input.setText(`/${skill} `)
+                const currentInput = getInput()
+                if (!currentInput) return
+                currentInput.setText(`/${skill} `)
                 setStore("prompt", {
                   input: `/${skill} `,
                   parts: [],
                 })
-                input.gotoBufferEnd()
+                currentInput.gotoBufferEnd()
               }}
             />
           ))
@@ -195,7 +217,7 @@ export function usePromptCommands(props: any) {
     ]
   })
 
-    command.register(() => [
+  command.register(() => [
     {
       title: "Stash prompt",
       value: "prompt.stash",
@@ -207,8 +229,10 @@ export function usePromptCommands(props: any) {
           input: store.prompt.input,
           parts: store.prompt.parts,
         })
-        input.extmarks.clear()
-        input.clear()
+        const currentInput = getInput()
+        if (!currentInput) return
+        currentInput.extmarks.clear()
+        currentInput.clear()
         setStore("prompt", { input: "", parts: [] })
         setStore("extmarkToPartIndex", new Map())
         dialog.clear()
@@ -222,10 +246,12 @@ export function usePromptCommands(props: any) {
       onSelect: (dialog: any) => {
         const entry = stash.pop()
         if (entry) {
-          input.setText(entry.input)
+          const currentInput = getInput()
+          if (!currentInput) return
+          currentInput.setText(entry.input)
           setStore("prompt", { input: entry.input, parts: entry.parts })
           restoreExtmarksFromParts(entry.parts)
-          input.gotoBufferEnd()
+          currentInput.gotoBufferEnd()
         }
         dialog.clear()
       },
@@ -239,10 +265,12 @@ export function usePromptCommands(props: any) {
         dialog.replace(() => (
           <DialogStash
             onSelect={(entry: any) => {
-              input.setText(entry.input)
+              const currentInput = getInput()
+              if (!currentInput) return
+              currentInput.setText(entry.input)
               setStore("prompt", { input: entry.input, parts: entry.parts })
               restoreExtmarksFromParts(entry.parts)
-              input.gotoBufferEnd()
+              currentInput.gotoBufferEnd()
             }}
           />
         ))

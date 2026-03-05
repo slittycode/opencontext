@@ -260,9 +260,10 @@ export namespace Config {
     const json = await Bun.file(pkg)
       .json()
       .catch(() => ({}))
+    const existingPluginDep = json.dependencies?.["@opencode-ai/plugin"]
     json.dependencies = {
       ...json.dependencies,
-      "@opencode-ai/plugin": targetVersion,
+      "@opencode-ai/plugin": existingPluginDep ?? targetVersion,
     }
     await Bun.write(pkg, JSON.stringify(json, null, 2))
     await new Promise((resolve) => setTimeout(resolve, 3000))

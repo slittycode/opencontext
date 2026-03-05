@@ -360,8 +360,8 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
 
     return {
       theme: new Proxy(values() as any, {
-        get(target, prop: keyof Theme) {
-          return target[prop];
+        get(_target, prop: keyof Theme) {
+          return values()[prop]
         },
       }) as Theme,
       get selected() {

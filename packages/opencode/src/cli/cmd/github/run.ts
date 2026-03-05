@@ -4,7 +4,7 @@ const REPO_EVENTS = ["schedule", "workflow_dispatch"] as const;
 const SUPPORTED_EVENTS = [...USER_EVENTS, ...REPO_EVENTS] as const;
 
 
-const AGENT_USERNAME = "opencontext-agent[bot]";
+const AGENT_USERNAME = "opencode-agent[bot]";
 const AGENT_REACTION = "eyes";
 type UserEvent = typeof USER_EVENTS[number];
 type RepoEvent = typeof REPO_EVENTS[number];

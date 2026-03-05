@@ -198,15 +198,10 @@ export namespace Provider {
 
       const awsAccessKeyId = Env.get("AWS_ACCESS_KEY_ID")
 
-      // TODO: Using process.env directly because Env.set only updates a process.env shallow copy,
-      // until the scope of the Env API is clarified (test only or runtime?)
       const awsBearerToken = iife(() => {
-        const envToken = process.env.AWS_BEARER_TOKEN_BEDROCK
+        const envToken = Env.get("AWS_BEARER_TOKEN_BEDROCK") ?? process.env.AWS_BEARER_TOKEN_BEDROCK
         if (envToken) return envToken
-        if (auth?.type === "api") {
-          process.env.AWS_BEARER_TOKEN_BEDROCK = auth.key
-          return auth.key
-        }
+        if (auth?.type === "api") return auth.key
         return undefined
       })
 
@@ -216,6 +211,10 @@ export namespace Provider {
 
       const providerOptions: AmazonBedrockProviderSettings = {
         region: defaultRegion,
+      }
+
+      if (awsBearerToken) {
+        providerOptions.apiKey = awsBearerToken
       }
 
       // Only use credential chain if no bearer token exists

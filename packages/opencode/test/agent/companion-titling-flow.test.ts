@@ -17,6 +17,27 @@ const testDataDir = path.join(os.tmpdir(), "opencontext-test-companion-titling",
 
 // Override the index directory for tests
 const originalEnv = process.env.XDG_DATA_HOME
+const sessionMethodRestores: Array<() => void> = []
+
+function mockSession(overrides: {
+  messages?: any
+  update?: any
+}) {
+  if (overrides.messages) {
+    const original = Session.messages
+    ;(Session as any).messages = overrides.messages
+    sessionMethodRestores.push(() => {
+      ;(Session as any).messages = original
+    })
+  }
+  if (overrides.update) {
+    const original = Session.update
+    ;(Session as any).update = overrides.update
+    sessionMethodRestores.push(() => {
+      ;(Session as any).update = original
+    })
+  }
+}
 
 beforeEach(() => {
   process.env.XDG_DATA_HOME = testDataDir
@@ -26,7 +47,11 @@ afterEach(async () => {
   // Clean up test directory
   await fs.rm(testDataDir, { recursive: true, force: true })
   process.env.XDG_DATA_HOME = originalEnv
-  
+
+  while (sessionMethodRestores.length > 0) {
+    sessionMethodRestores.pop()?.()
+  }
+
   // Restore mocks
   mock.restore()
 })
@@ -34,51 +59,49 @@ afterEach(async () => {
 describe("companion.title-generator generateDefaultTitle", () => {
   test("generates title from first user message in chronological order", async () => {
     // Mock Session.messages to return multiple messages (newest first)
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          // Newest message (should be ignored)
-          {
-            info: {
-              id: "msg-3",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "This is the latest message",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        // Newest message (should be ignored)
+        {
+          info: {
+            id: "msg-3",
+            role: "user",
           },
-          // Middle message
-          {
-            info: {
-              id: "msg-2",
-              role: "assistant",
+          parts: [
+            {
+              type: "text",
+              text: "This is the latest message",
             },
-            parts: [
-              {
-                type: "text",
-                text: "Response",
-              },
-            ],
+          ],
+        },
+        // Middle message
+        {
+          info: {
+            id: "msg-2",
+            role: "assistant",
           },
-          // Oldest message (should be used for title)
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
+          parts: [
+            {
+              type: "text",
+              text: "Response",
             },
-            parts: [
-              {
-                type: "text",
-                text: "Help me debug the authentication flow",
-              },
-            ],
+          ],
+        },
+        // Oldest message (should be used for title)
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Help me debug the authentication flow",
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toBe("help-me-debug-the-authentication-flow")
@@ -86,38 +109,36 @@ describe("companion.title-generator generateDefaultTitle", () => {
 
   test("uses first user message even if assistant message comes first", async () => {
     // Mock Session.messages with assistant message first chronologically
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          // Newest
-          {
-            info: {
-              id: "msg-2",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Second user message",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        // Newest
+        {
+          info: {
+            id: "msg-2",
+            role: "user",
           },
-          // Oldest (assistant message, should be skipped)
-          {
-            info: {
-              id: "msg-1",
-              role: "assistant",
+          parts: [
+            {
+              type: "text",
+              text: "Second user message",
             },
-            parts: [
-              {
-                type: "text",
-                text: "Hello! How can I help?",
-              },
-            ],
+          ],
+        },
+        // Oldest (assistant message, should be skipped)
+        {
+          info: {
+            id: "msg-1",
+            role: "assistant",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Hello! How can I help?",
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toBe("second-user-message")
@@ -126,107 +147,97 @@ describe("companion.title-generator generateDefaultTitle", () => {
   test("truncates long messages to 50 characters", async () => {
     const longMessage = "a".repeat(100)
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: longMessage,
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: longMessage,
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title.length).toBeLessThanOrEqual(50)
   })
 
   test("falls back to date-based title when no messages", async () => {
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => []),
-      },
-    }))
+    mockSession({
+      messages: mock(async () => []),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toMatch(/^session-\d{4}-\d{2}-\d{2}$/)
   })
 
   test("falls back to date-based title when no user messages exist", async () => {
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "assistant",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Hello!",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "assistant",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Hello!",
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toMatch(/^session-\d{4}-\d{2}-\d{2}$/)
   })
 
   test("falls back to date-based title when no text part found", async () => {
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "file",
-                path: "/some/file.txt",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "file",
+              path: "/some/file.txt",
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toMatch(/^session-\d{4}-\d{2}-\d{2}$/)
   })
 
   test("sanitizes special characters from message", async () => {
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Fix bug #123 @urgent!!!",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Fix bug #123 @urgent!!!",
+            },
+          ],
+        },
+      ]),
+    })
 
     const title = await generateDefaultTitle("session-1")
     expect(title).toBe("fix-bug-123-urgent")
@@ -265,24 +276,22 @@ describe("companion.titling-flow getSuggestedTitle", () => {
   test("returns suggested title for untitled session", async () => {
     await addSession("session-1", null)
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Debug authentication",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Debug authentication",
+            },
+          ],
+        },
+      ]),
+    })
     
     const suggestion = await getSuggestedTitle("session-1")
     expect(suggestion).toBe("debug-authentication")
@@ -295,11 +304,9 @@ describe("companion.titling-flow applyTitle", () => {
     
     // Mock Session.update
     const updateMock = mock(async () => {})
-    mock.module("../../src/session", () => ({
-      Session: {
-        update: updateMock,
-      },
-    }))
+    mockSession({
+      update: updateMock,
+    })
     
     const finalTitle = await applyTitle("session-1", "My Test Session!")
     
@@ -325,11 +332,9 @@ describe("companion.titling-flow applyTitle", () => {
       capturedEditor = editor
     })
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        update: updateMock,
-      },
-    }))
+    mockSession({
+      update: updateMock,
+    })
     
     await applyTitle("session-1", "Test Title")
     
@@ -345,6 +350,9 @@ describe("companion.titling-flow applyTitle", () => {
 
   test("sanitizes user-provided title", async () => {
     await addSession("session-1", null)
+    mockSession({
+      update: mock(async () => {}),
+    })
     
     const finalTitle = await applyTitle("session-1", "Hello@World#123!!!")
     
@@ -353,6 +361,9 @@ describe("companion.titling-flow applyTitle", () => {
 
   test("handles empty title by using 'session' fallback", async () => {
     await addSession("session-1", null)
+    mockSession({
+      update: mock(async () => {}),
+    })
     
     const finalTitle = await applyTitle("session-1", "")
     
@@ -361,6 +372,9 @@ describe("companion.titling-flow applyTitle", () => {
 
   test("truncates long titles to 50 characters", async () => {
     await addSession("session-1", null)
+    mockSession({
+      update: mock(async () => {}),
+    })
     
     const longTitle = "a".repeat(100)
     const finalTitle = await applyTitle("session-1", longTitle)
@@ -382,24 +396,22 @@ describe("companion.titling-flow checkAndSuggestTitle", () => {
   test("returns wasUntitled=true and suggestion for untitled session", async () => {
     await addSession("session-1", null)
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Test message",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Test message",
+            },
+          ],
+        },
+      ]),
+    })
     
     const result = await checkAndSuggestTitle("session-1")
     
@@ -416,25 +428,23 @@ describe("companion.titling-flow integration", () => {
     // Mock Session.update
     const updateMock = mock(async () => {})
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Help with OAuth",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-        update: updateMock,
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Help with OAuth",
+            },
+          ],
+        },
+      ]),
+      update: updateMock,
+    })
     
     // Check and get suggestion
     const { wasUntitled, suggestion } = await checkAndSuggestTitle("session-1")
@@ -460,25 +470,23 @@ describe("companion.titling-flow integration", () => {
     // Mock Session.update
     const updateMock = mock(async () => {})
     
-    mock.module("../../src/session", () => ({
-      Session: {
-        messages: mock(async () => [
-          {
-            info: {
-              id: "msg-1",
-              role: "user",
-            },
-            parts: [
-              {
-                type: "text",
-                text: "Some message",
-              },
-            ],
+    mockSession({
+      messages: mock(async () => [
+        {
+          info: {
+            id: "msg-1",
+            role: "user",
           },
-        ]),
-        update: updateMock,
-      },
-    }))
+          parts: [
+            {
+              type: "text",
+              text: "Some message",
+            },
+          ],
+        },
+      ]),
+      update: updateMock,
+    })
     
     // Check and get suggestion
     const { wasUntitled, suggestion } = await checkAndSuggestTitle("session-1")

@@ -159,7 +159,8 @@ async function handleRecall(params: Params) {
 async function handleSearch(params: Params) {
   const { query } = params
 
-  if (!query) {
+  const normalizedQuery = query?.trim().toLowerCase()
+  if (!normalizedQuery) {
     return { title: "Error", output: "query is required for search operation", metadata: {} }
   }
 
@@ -168,7 +169,13 @@ async function handleSearch(params: Params) {
     const status = await CareerMemory.readStatus()
     const archive = await CareerMemory.readArchive()
 
-    const ranked = CareerMemory.Scoring.rankEntries(archive, profile, status, { timeDecayFactor: 0.1 })
+    const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean)
+    const matched = archive.filter((entry) => {
+      const haystack = `${entry.content}\n${entry.summary ?? ""}\n${entry.category}\n${entry.id}`.toLowerCase()
+      return haystack.includes(normalizedQuery) || queryTerms.every((term) => haystack.includes(term))
+    })
+
+    const ranked = CareerMemory.Scoring.rankEntries(matched, profile, status, { timeDecayFactor: 0.1 })
     const results = ranked.slice(0, 10)
 
     if (results.length === 0) {
