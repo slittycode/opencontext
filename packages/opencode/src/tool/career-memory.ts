@@ -1,6 +1,7 @@
 import z from "zod"
 import { Tool } from "./tool"
 import { CareerMemory } from "@/memory/career"
+import { Config } from "@/config/config"
 
 const DESCRIPTION = `Career memory management tool for career agents.
 
@@ -30,6 +31,11 @@ const Params = z.object({
 })
 
 type Params = z.infer<typeof Params>
+
+async function resolveCareerMemoryConfig(): Promise<z.infer<typeof CareerMemory.CareerMemoryConfig>> {
+  const config = await Config.get()
+  return CareerMemory.CareerMemoryConfig.parse(config.career?.memory ?? {})
+}
 
 export const CareerMemoryTool = Tool.define("career_memory", {
   description: DESCRIPTION,
@@ -68,12 +74,6 @@ export const CareerMemoryTool = Tool.define("career_memory", {
 async function handleSave(params: Params, ctx: Tool.Context) {
   const { tier, category, content } = params
 
-  if (!content) {
-    return { title: "Error", output: "content is required for save operation", metadata: {} }
-  }
-
-  const processedContent = CareerMemory.processContent(content)
-
   try {
     switch (tier) {
       case "profile": {
@@ -108,6 +108,10 @@ async function handleSave(params: Params, ctx: Tool.Context) {
       }
 
       case "recent": {
+        if (!content) {
+          return { title: "Error", output: "content is required for save operation", metadata: {} }
+        }
+        const processedContent = CareerMemory.processContent(content)
         const recent = {
           sessionId: ctx.sessionID || "unknown",
           content: processedContent,
@@ -124,6 +128,10 @@ async function handleSave(params: Params, ctx: Tool.Context) {
 
       case "archive":
       default: {
+        if (!content) {
+          return { title: "Error", output: "content is required for save operation", metadata: {} }
+        }
+        const processedContent = CareerMemory.processContent(content)
         const archiveEntry = {
           id: CareerMemory.generateId(),
           category: category || "ideas",
@@ -145,7 +153,8 @@ async function handleSave(params: Params, ctx: Tool.Context) {
 
 async function handleRecall(params: Params) {
   try {
-    const context = await CareerMemory.buildMemoryContext(5, { timeDecayFactor: 0.1 })
+    const careerConfig = await resolveCareerMemoryConfig()
+    const context = await CareerMemory.buildMemoryContext(5, { timeDecayFactor: careerConfig.timeDecayFactor })
     return {
       title: "Career Memory",
       output: context || "No career memory found.",
@@ -165,6 +174,7 @@ async function handleSearch(params: Params) {
   }
 
   try {
+    const careerConfig = await resolveCareerMemoryConfig()
     const profile = await CareerMemory.readProfile()
     const status = await CareerMemory.readStatus()
     const archive = await CareerMemory.readArchive()
@@ -175,7 +185,9 @@ async function handleSearch(params: Params) {
       return haystack.includes(normalizedQuery) || queryTerms.every((term) => haystack.includes(term))
     })
 
-    const ranked = CareerMemory.Scoring.rankEntries(matched, profile, status, { timeDecayFactor: 0.1 })
+    const ranked = CareerMemory.Scoring.rankEntries(matched, profile, status, {
+      timeDecayFactor: careerConfig.timeDecayFactor,
+    })
     const results = ranked.slice(0, 10)
 
     if (results.length === 0) {
